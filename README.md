@@ -19,8 +19,8 @@ An objective function is set up in terms of the unknown nodal pressures. The con
      |                                      | | ?1 |  ____    |      q01        |
      |                       |              | | ?2 |          |      q02        |
      |                                      | | ?3 |          |      q03        |
-     |          -K           |        0     | | .  |          |  also includes  |
-     |                                      | | .  |          |   terms from    |  IUB'
+     |          -K           |        0     | | .  |          |  also includes  | IUB'
+     |                                      | | .  |          |   terms from    | 
      |                       |              | | .  |          | fixed p values  |
      |                                      | | .  |          |        .        |
      |_                      |            __| |_ __|          |_              __|   
