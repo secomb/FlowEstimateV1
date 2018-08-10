@@ -15,7 +15,6 @@ void Amatrix(double **matrix) {
 	extern int nnod, matrixdim;
 	extern int *nodtyp, *knowntyp, *nodelambda;
 	extern int **nodnod;
-	extern double ktau, kpress;
 	extern double *length_weight, *precond;
 	extern double **hmat, **kmat;
 
