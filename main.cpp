@@ -3,7 +3,7 @@ Main program for FlowEstimateV1
 Program to estimate flows in microvascular networks
 Brendan Fry, August 2009.
 Modified algorithms by Bohan Li, December 2017.
-Edited by Tim Secomb, August 2018.
+Modified by Tim Secomb, August 2018.
 *************************************************************************/
 
 #define _CRT_SECURE_NO_DEPRECATE
