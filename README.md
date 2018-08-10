@@ -33,9 +33,8 @@ IUB' = number of internal nodes + number of boundary nodes with known flow
 IUB' + N = matrixdim = 2*N - Nkp - Nu is the dimension of the matrix.
 
 The target shear stress refers only to the magnitude and the flow directions are unknown a priori. This introduces a combinatorial aspect into the optimization problem. A heuristic approach is used. The parameter ktau, which gives the weight of the squared shear stress deviations in the objective function, is increased stepwise, with the target flow direction set in each segment set equal to the computed flow direction at the previous step. The outline of the procedure is:
-(1) Start with ktau = 0
-(2) Determine flows. 
-
+(1) Start with ktau = 0.
+(2) Determine flows.
 (3) If a segment flow is negative, set the corresponding flow direction to -1, so the target shear stress is set to be negative.
 (4) Repeat until flow directions no longer change for the given ktau value.
 (5) Successively double ktau, and repeat (2), (3) and (4).
