@@ -1,0 +1,5 @@
+FlowEstParams
+31.		target pressure
+63.5		target shear stress
+14		number of ktau steps
+10		max number of iterations for each tau value
