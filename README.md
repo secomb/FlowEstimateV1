@@ -12,7 +12,7 @@ An objective function is set up in terms of the unknown nodal pressures. The con
      |                       |              | | p1 |          |                 |
      |                                      | | p2 |          |                 |
      |   H’ = 1 + ktH/kpw    |     -KT      | | p3 |          |p+kt*LMtau/kpw   |
-  N  |         or 1                         | | .  |          |   or fixed p    |
+     |         or 1                         | | .  |          |   or fixed p    |  N
      |                       |              | | .  |          |                 |
      |                                      | | pn |          |                 |
      |-----------------------+--------------| |----|  ____    |-----------------|
@@ -20,10 +20,10 @@ An objective function is set up in terms of the unknown nodal pressures. The con
      |                       |              | | ?2 |          |      q02        |
      |                                      | | ?3 |          |      q03        |
      |          -K           |        0     | | .  |          |  also includes  |
- IUB'|                                      | | .  |          |   terms from    |
+     |                                      | | .  |          |   terms from    |  IUB'
      |                       |              | | .  |          | fixed p values  |
      |                                      | | .  |          |        .        |
-     |_                      |            __| |_ __|          |_              __|
+     |_                      |            __| |_ __|          |_              __|   
 
 where N = nnod = total number of nodes;
 Nkp = numberknownpress = number of boundary nodes with known pressures;
