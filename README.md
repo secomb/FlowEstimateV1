@@ -61,7 +61,7 @@ network.exelem, network.exenode and cmgui.com.txt can be used to obtain 3D visua
 
 4. We have tested this package using Microsoft Visual C++ 2017 under Windows 7. For error reporting and suggestions please contact Dr. Timothy W. Secomb, (520) 626-4513, email secomb@u.arizona.edu. We welcome your comments and suggestions.
 
-5. Brendan Fry, Amy Smith, Bohan Li and Tim Secomb contributed to the development of this method.
+5. Brendan Fry, Jack Lee, Nic Smith, Amy Smith, Bohan Li and Tim Secomb contributed to the development of this method.
 
 6. This program is freely available for non-commercial use, provided appropriate acknowledgement is given. Commercial users please contact us before using this program. No assurance is given that it is free of errors and any use is at the user’s risk.
 
