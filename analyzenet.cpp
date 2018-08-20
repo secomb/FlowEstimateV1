@@ -23,7 +23,7 @@ void analyzenet()
 {
 	extern int nseg, nnod, nnodbc, nnodbck, nodsegm, solvetyp;
 	extern int numberknownpress, numberunknown, matrixdim;
-	extern int *bcnodname, *bcnod, *bctyp, *nodtyp, *nodname, *ista, *iend, *knowntyp, *nodelambda, *index;
+	extern int *bcnodname, *bcnod, *bctyp, *nodtyp, *nodname, *ista, *iend, *knowntyp, *nodelambda, *idx;
 	extern int **segnodname, **nodnod, **nodseg;
 	extern float pi1, totallength, consthd;
 	extern float *diam, *q, *qq, *bcprfl, *bchd, **cnode;
@@ -129,7 +129,7 @@ void analyzenet()
 	xvector = dvector(1, matrixdim);
 	precond = dvector(1, matrixdim);
 	if (solvetyp == 1) {	//not needed for sparse version
-		index = ivector(1, matrixdim);
+		idx = ivector(1, matrixdim);
 		dd = dvector(1, matrixdim);
 		fullmatrix = dmatrix(1, matrixdim, 1, matrixdim);
 	}

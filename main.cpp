@@ -29,7 +29,7 @@ int numberknownpress, numberunknown, matrixdim;
 int inodbc, currentnod, ktausteps, maxinsideit;
 int nitmax, nitmax1, nsegfl;
 int varyviscosity, phaseseparation;
-int *flow_direction, *actual_direction, *index;
+int *flow_direction, *actual_direction, *idx;
 int *nk, *nodrank;
 int *nodtyp, *nodout, *bcnodname, *bcnod, *bctyp;
 int *nodname, *segname, *segtyp, *ista, *iend, *knowntyp;
