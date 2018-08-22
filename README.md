@@ -59,7 +59,7 @@ NetworkNew.dat recreates the Network.dat file but with the computed flow values 
 histogram-logflows.out.ps, histogram-logstress.out.ps and histogram-pressures.out.ps give histograms of the data in the corresponding .out files, for log10(flow), log10(shear stress) and pressure.
 network.exelem, network.exenode and cmgui.com.txt can be used to obtain 3D visualizations of the network using CMGUI. When CMGUI is started, use File - Open - com file, select greens.com.txt and hit “All” for the visualization. For details of cmgui, see: http://sourceforge.net/projects/cmiss/files/cmgui/cmgui-wx-2.8.0/
 
-4. We have tested this package using Microsoft Visual C++ 2017 under Windows 7. For error reporting and suggestions please contact Dr. Timothy W. Secomb, (520) 626-4513, email secomb@u.arizona.edu. We welcome your comments and suggestions.
+4. We have tested this package using Microsoft Visual C++ 2017 under Windows 7 and linux. For linux, a makefile is included: see the instructions in the file and remove the .linux.txt extension before use. For error reporting and suggestions please contact Dr. Timothy W. Secomb, (520) 626-4513, email secomb@u.arizona.edu. We welcome your comments and suggestions.
 
 5. Brendan Fry, Jack Lee, Nic Smith, Amy Smith, Bohan Li and Tim Secomb contributed to the development of this method.
 
