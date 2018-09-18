@@ -15,11 +15,11 @@ Pressures in mmHg, flows in um^3/s, viscosity in cP
 void writeflow()
 {
 	extern int nseg, nnod, nnodbc, *segname, *segtyp, *nodname;
-	extern int *bcnod, *knowntyp, **segnodname;
+	extern int *bcnod, *knowntyp, **segnodname, **nodseg, *ista;
 	extern float *diam, *q, *hd, *bcprfl;
 	extern double *nodpress;
 
-	int i, iseg, inod, inodbc, max = 200, type = 0;
+	int i, iseg, inod, inodbc, max = 200, type = 2;
 	float qinput, hdinput;
 	FILE *ifp, *ofp;
 	char bb[200];
@@ -39,7 +39,7 @@ void writeflow()
 			segname[iseg], segtyp[iseg], segnodname[1][iseg], segnodname[2][iseg], diam[iseg], q[iseg], hd[iseg]);
 		fprintf(ofp, "%s", bb);
 	}
-	for (inod = 1; inod <= nnod; inod++) {
+	for (inod = 1; inod <= nnod+2; inod++) {	//copy 2 header lines also
 		fgets(bb, max, ifp);
 		fprintf(ofp, "%s", bb);
 	}
@@ -47,7 +47,9 @@ void writeflow()
 	fprintf(ofp, "Node Bctype Press / Flow\n");
 	for (inodbc = 1; inodbc <= nnodbc; inodbc++) {
 		inod = bcnod[inodbc];
-		fprintf(ofp, "%i %i %f\n", nodname[inod], type, nodpress[inod]);
+		iseg = nodseg[1][inod];
+		if(inod == ista[iseg]) fprintf(ofp, "%i %i %f\n", nodname[inod], type, q[iseg]);
+		else fprintf(ofp, "%i %i %f\n", nodname[inod], type, -q[iseg]);
 	}
 	fclose(ifp);
 	fclose(ofp);
