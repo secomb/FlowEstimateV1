@@ -29,11 +29,11 @@ void analyzeresults()
 	FILE *ofp;
 
 	for (inod = 1; inod <= nnod; inod++) histogramdisplay[inod] = nodpress[inod];
-	histogram(histogramdisplay, nnod, "histogram-pressures.out");
+	histogram(histogramdisplay, nnod, "Current/histogram-pressures.out");
 	for (iseg = 1; iseg <= nseg; iseg++) histogramdisplay[iseg] = log10(qq[iseg] + 1.e-6);
-	histogram(histogramdisplay, nseg, "histogram-logflows.out");
+	histogram(histogramdisplay, nseg, "Current/histogram-logflows.out");
 	for (iseg = 1; iseg <= nseg; iseg++) histogramdisplay[iseg] = log10(fabs(tau[iseg]) + 1.e-6);
-	histogram(histogramdisplay, nseg, "histogram-logstress.out");
+	histogram(histogramdisplay, nseg, "Current/histogram-logstress.out");
 
 	for (iseg = 1; iseg <= nseg; iseg++) {
 		if (q[iseg] < 0) flow_direction[iseg] = -1;
@@ -101,7 +101,7 @@ void analyzeresults()
 	segpressdeviation = sqrt(segpressdeviation / totallength);
 	sheardeviation = sqrt(sheardeviation / totallength);
 
-	ofp = fopen("Results.out", "w");
+	ofp = fopen("Current/Results.out", "w");
 	fprintf(ofp, "All quantities weighted by segment length\n");
 	fprintf(ofp, "Segment flow mean = %6f\n", meanflow);
 	fprintf(ofp, "Nodal pressure mean +- s.d.: %6f +- %6f\n", meannodpress, nodpressdeviation);

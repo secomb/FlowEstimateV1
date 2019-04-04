@@ -48,8 +48,12 @@ void writeflow()
 	for (inodbc = 1; inodbc <= nnodbc; inodbc++) {
 		inod = bcnod[inodbc];
 		iseg = nodseg[1][inod];
-		if(inod == ista[iseg]) fprintf(ofp, "%i %i %f\n", nodname[inod], type, q[iseg]);
-		else fprintf(ofp, "%i %i %f\n", nodname[inod], type, -q[iseg]);
+		if (inod == ista[iseg]) {
+			fprintf(ofp, "%i %i %f 0.400 50.000\n", nodname[inod], knowntyp[inod], q[iseg]);
+		}
+		else {
+			fprintf(ofp, "%i %i %f 0.400 50.000\n", nodname[inod], knowntyp[inod], -q[iseg]);
+		}
 	}
 	fclose(ifp);
 	fclose(ofp);

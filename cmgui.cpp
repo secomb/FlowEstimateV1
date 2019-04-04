@@ -132,9 +132,9 @@ void cmgui(float *segvar)
 	char fname[80];
 	FILE *exelem, *exnode;
 
-	strcpy(fname, "network.exelem");
+	strcpy(fname, "Current/network.exelem");
 	exelem = fopen(fname, "w");
-	strcpy(fname, "network.exnode");
+	strcpy(fname, "Current/network.exnode");
 	exnode = fopen(fname, "w");
 	WriteExelemHeader(exelem);
 	WriteExnodeHeader(exnode);

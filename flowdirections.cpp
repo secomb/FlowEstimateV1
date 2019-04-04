@@ -33,14 +33,14 @@ void flowdirections()
 
 	int insideit, iseg, i, numdirectionchange, numreversedirection, currentdirection;
 
-	ofp1 = fopen("Run_summary.out", "w");
+	ofp1 = fopen("Current/Run_summary.out", "w");
 	fprintf(ofp1, "ktau   press_rms   shear_rms   total_dev\n");
 	fclose(ofp1);
 
 	for (i = 1; i <= ktausteps; i++) {			//keep doubling ktau
-		if (i == 1) ktau = 0.;
-		if (i == 2) ktau = 0.001;
+		if (i == 1) ktau = 0.001;
 		else ktau = ktau * 2;
+
 		printf("************************ ktau = %6f *********************************\n", ktau);
 		insideit = 1;
 		do {			// Iterate with increasing ktau values
