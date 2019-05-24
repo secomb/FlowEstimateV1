@@ -14,9 +14,18 @@ Modified by Tim Secomb, August 2018.
 #include <math.h>
 #include <time.h>
 #include "nrutil.h"
-#include <boost/filesystem.hpp>	//needed for copy_file. October 2018
 
-namespace fs = boost::filesystem;
+#if defined(__linux__)
+	// Requires c++17 support, should be included in all current linux releases
+	#include <experimental/filesystem> 
+	namespace fs = std::experimental::filesystem::v1;
+#elif defined(__APPLE__)
+	// Requires removal of the -lstdc++fs flag from makefile
+	#include <filesystem>
+	namespace fs = std::filesystem;
+#elif defined(_WIN32)    //Windows version
+	#include <Windows.h>
+#endif
 
 void input(void);
 void analyzenet(void);
@@ -67,14 +76,24 @@ int main(int argc, char *argv[])
 	FILE *ofp;
 
 	//Create a Current subdirectory using boost filesystem. August 2017. Modified January 2019.
-	if (!fs::exists("Current")) fs::create_directory("Current");
+	#if defined(__unix__)
+		if (!fs::exists("Current")) fs::create_directory("Current");	
 
-	//copy input data files to "Current" directory
-	fs::copy_file("ContourParams.dat", fs::path("Current/ContourParams.dat"), fs::copy_option::overwrite_if_exists);
-	fs::copy_file("FlowEstParams.dat", fs::path("Current/FlowEstParams.dat"), fs::copy_option::overwrite_if_exists);
-	fs::copy_file("Network.dat", fs::path("Current/Network.dat"), fs::copy_option::overwrite_if_exists);
-	fs::copy_file("RheolParams.dat", fs::path("Current/RheolParams.dat"), fs::copy_option::overwrite_if_exists);
+		fs::copy_file("ContourParams.dat", fs::path("Current/ContourParams.dat"), fs::copy_options::overwrite_existing);
+		fs::copy_file("FlowEstParams.dat", fs::path("Current/FlowEstParams.dat"), fs::copy_options::overwrite_existing);
+		fs::copy_file("Network.dat", fs::path("Current/Network.dat"), fs::copy_options::overwrite_existing);
+		fs::copy_file("RheolParams.dat", fs::path("Current/RheolParams.dat"), fs::copy_options::overwrite_existing);
 
+	#elif defined(_WIN32)
+		BOOL NoOverwrite = FALSE;
+		FILE *ofp;
+
+		CopyFile("FlowEstParams.dat","Current\\FlowEstParams.dat",NoOverwrite);
+		CopyFile("ContourParams.dat","Current\\ContourParams.dat",NoOverwrite);
+		CopyFile("RheolParams.dat","Current\\RheolParams.dat",NoOverwrite);
+		CopyFile("Metwork.dat","Current\\Network.dat",NoOverwrite);
+	#endif
+		
 	solvetyp = 2;		//solvetyp: 1 = lu decomposition, 2 = sparse conjugate gradient
 
 	input();
