@@ -42,10 +42,15 @@ gfx mod win 1 view perspective
 #define _CRT_SECURE_NO_DEPRECATE
 
 #include <cstdio>
-#include <malloc.h>
 #include <math.h>
 #include <string.h>
 #include "nrutil.h"
+
+# if defined(__APPLE__)
+	#include <malloc/malloc.h>
+#else
+	#include <malloc.h>
+#endif
 
 void WriteExnodeHeader(FILE *exnode) // Write initial section of .exnode file
 {
