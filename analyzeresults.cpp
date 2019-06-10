@@ -1,6 +1,6 @@
 /************************************************************************
-analyzeresults for FlowEst2018a
-TWS, August 2018.
+analyzeresults for FlowEstV1a
+TWS, August 2018, May 2019.
 *************************************************************************/
 #define _CRT_SECURE_NO_DEPRECATE
 
@@ -16,31 +16,58 @@ float viscor(float d, float h);
 
 void analyzeresults()
 {
-	extern int nnod, nseg, varyviscosity;
-	extern int *nodname, *nodtyp, *knowntyp, *flow_direction, *actual_direction, *segname;	
-	extern float totallength, constvisc;
+	extern int nnod, nseg, varyviscosity, *ista, *iend;
+	extern int *nodname, *nodtyp, *knowntyp, *flow_direction, *actual_direction, *segname, *segtyp;	
+	extern float totallength, constvisc, pi1;
 	extern float *histogramdisplay, *q, *qq, *diam, *tau, *segpress, *hd;
 	extern double *nodpress, *length_weight, *lseg, *cond;
 	
-	int iseg, inod, numbernegativeflows = 0, numberreversedflows = 0;
+	int i, iseg, inod, numbernegativeflows = 0, numberreversedflows = 0, numberzeroflows = 0;
 	int minpressnod, maxpressnod, maxflowseg, minflowseg, maxshearseg, minshearseg;
 	float meanflow, meannodpress, meansegpress, meanshear, nodpressdeviation, segpressdeviation, sheardeviation;
 	float maxflow, minflow, maxpress, minpress, maxshear, minshear;
 	FILE *ofp;
 
-	for (inod = 1; inod <= nnod; inod++) histogramdisplay[inod] = nodpress[inod];
-	histogram(histogramdisplay, nnod, "Current/histogram-pressures.out");
-	for (iseg = 1; iseg <= nseg; iseg++) histogramdisplay[iseg] = log10(qq[iseg] + 1.e-6);
-	histogram(histogramdisplay, nseg, "Current/histogram-logflows.out");
-	for (iseg = 1; iseg <= nseg; iseg++) histogramdisplay[iseg] = log10(fabs(tau[iseg]) + 1.e-6);
-	histogram(histogramdisplay, nseg, "Current/histogram-logstress.out");
-
 	for (iseg = 1; iseg <= nseg; iseg++) {
+		segpress[iseg] = (nodpress[ista[iseg]] + nodpress[iend[iseg]]) / 2;
+		qq[iseg] = fabs(q[iseg]);
+		if (qq[iseg] < 1.e-4) {
+			segtyp[iseg] = 0;		//label zero-flow segments as type 0
+			numberzeroflows++;
+		}
+	}
+	printf("Zero flow segments (final): %4i\n", numberzeroflows);
+
+	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {
 		if (q[iseg] < 0) flow_direction[iseg] = -1;
 		else flow_direction[iseg] = 1;
 		if (flow_direction[iseg] * actual_direction[iseg] == -1) numberreversedflows++;
 	}
-	printf("Reversed flows (final): %4i\n", numberreversedflows);
+	printf("Reversed flow segments (final): %4i\n", numberreversedflows);
+
+	for (inod = 1; inod <= nnod; inod++) histogramdisplay[inod] = nodpress[inod];
+	histogram(histogramdisplay, nnod, "Current/histogram-pressures.out");
+
+	i = 0;
+	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {
+		i++;
+		histogramdisplay[i] = log10(qq[iseg]);
+	}
+	histogram(histogramdisplay, i, "Current/histogram-logflows.out");
+
+	i = 0;	//velocities in mm/s
+	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {
+		i++;
+		histogramdisplay[i] = log10(4000. / 60. * qq[iseg] / pi1 / SQR(diam[iseg]));
+	}
+	histogram(histogramdisplay, i, "Current/histogram-logvelocities.out");
+
+	i = 0;
+	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {
+		i++;
+		histogramdisplay[i] = log10(fabs(tau[iseg]));
+	}
+	histogram(histogramdisplay, i, "Current/histogram-logstress.out");
 
 	meannodpress = 0.;
 	minpress = 1.e6;
@@ -68,7 +95,7 @@ void analyzeresults()
 	minflow = 1.e6;
 	maxshear = 0.;
 	minshear = 1.e6;
-	for (iseg = 1; iseg <= nseg; iseg++) {					//mean calculations
+	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {		//mean calculations
 		meanflow += fabs(q[iseg]) * lseg[iseg];
 		meansegpress += segpress[iseg] * lseg[iseg];
 		meanshear += fabs(tau[iseg]) * lseg[iseg];
@@ -94,7 +121,7 @@ void analyzeresults()
 	meanshear = meanshear / totallength;
 	segpressdeviation = 0.;
 	sheardeviation = 0.;
-	for (iseg = 1; iseg <= nseg; iseg++) {					// standard deviation calculations
+	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {					// standard deviation calculations
 		segpressdeviation += lseg[iseg] * SQR(segpress[iseg] - meansegpress);
 		sheardeviation += lseg[iseg] * SQR(fabs(tau[iseg]) - meanshear);
 	}
@@ -107,15 +134,15 @@ void analyzeresults()
 	fprintf(ofp, "Nodal pressure mean +- s.d.: %6f +- %6f\n", meannodpress, nodpressdeviation);
 	fprintf(ofp, "Segment pressure mean +- s.d.: %6f +- %6f\n", meansegpress, segpressdeviation);
 	fprintf(ofp, "Shear stress mean +- s.d.: %6f +- %6f\n", meanshear, sheardeviation);
-	fprintf(ofp, "Maximum pressure: %6f at node %4i\n", maxpress, maxpressnod);
-	fprintf(ofp, "Minimum pressure: %6f at node %4i\n", minpress, minpressnod);
-	fprintf(ofp, "Maximum flow: %6f at segment %4i\n", maxflow, maxflowseg);
-	fprintf(ofp, "Minimum flow: %6f at segment %4i\n", minflow, minflowseg);
-	fprintf(ofp, "Maximum shear stress: %6f at segment %4i\n", maxshear, maxshearseg);
-	fprintf(ofp, "Minimum shear stress: %6f at segment %4i\n", minshear, minshearseg);
+	fprintf(ofp, "Maximum pressure: %6f at node %4i\n", maxpress, nodname[maxpressnod]);
+	fprintf(ofp, "Minimum pressure: %6f at node %4i\n", minpress, nodname[minpressnod]);
+	fprintf(ofp, "Maximum flow: %6f at segment %4i\n", maxflow, segname[maxflowseg]);
+	fprintf(ofp, "Minimum flow: %6f at segment %4i\n", minflow, segname[minflowseg]);
+	fprintf(ofp, "Maximum shear stress: %6f at segment %4i\n", maxshear, segname[maxshearseg]);
+	fprintf(ofp, "Minimum shear stress: %6f at segment %4i\n", minshear, segname[minshearseg]);
 	fprintf(ofp, "segment name flow    length    conductance pressure shear stress dishem visc\n");
-	for (iseg = 1; iseg <= nseg; iseg++) {
-		fprintf(ofp, "%4i %4i %6f %6f %10.2e %6f %6f %6f ", iseg, segname[iseg], qq[iseg], lseg[iseg], cond[iseg], segpress[iseg], fabs(tau[iseg]), hd[iseg]);
+	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {
+		fprintf(ofp, "%4i %4i %6f %6f %10.2e %6f %6f %6f ", iseg, segname[iseg], q[iseg], lseg[iseg], cond[iseg], segpress[iseg], tau[iseg], hd[iseg]);
 		if (varyviscosity == 1) fprintf(ofp, "%6f\n", viscor(diam[iseg], hd[iseg]));
 		else fprintf(ofp, "%6f\n", constvisc);
 	}

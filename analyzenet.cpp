@@ -24,9 +24,10 @@ void analyzenet()
 	extern int nseg, nnod, nnodbc, nnodbck, nodsegm, solvetyp;
 	extern int numberknownpress, numberunknown, matrixdim;
 	extern int *bcnodname, *bcnod, *bctyp, *nodtyp, *nodname, *ista, *iend, *knowntyp, *nodelambda, *idx;
+	extern int *known_flow_direction;
 	extern int **segnodname, **nodnod, **nodseg;
 	extern float pi1, totallength, consthd;
-	extern float *diam, *q, *qq, *bcprfl, *bchd, **cnode;
+	extern float *diam, *q, *qq, *hd, *bcprfl, *bchd, **cnode;
 	extern double presstarget1, *lseg, *length_weight;
 	extern double *nodpress, *lambda, *nodeinflow, *dd;
 	extern double **hmat, **kmat;
@@ -78,12 +79,14 @@ void analyzenet()
 		for (iseg = 1; iseg <= nodtyp[inod]; iseg++) length_weight[inod] += 0.5*lseg[nodseg[iseg][inod]];
 		totallength1 += length_weight[inod];
 	}
-	if (fabs(totallength - totallength1) > 0.1) printf("*** Error in nodal length weights\n");
+	if (fabs(totallength - totallength1) / totallength > 1.e-5) printf("*** Error in nodal length weights\n");
 	// Classify node types
 	numberknownpress = 0;
 	numberunknown = 0;
 	nnodbc = 0;
 	for (inod = 1; inod <= nnod; inod++) {	//initialize all nodes
+		if (nodtyp[inod] == 0)
+			printf("*** Error: Node %i with no attached segment\n", inod);
 		if (nodtyp[inod] == 1) {			//identify boundary nodes
 			nnodbc++;
 			bcnod[nnodbc] = inod;			//set the inodbc-th boundary node to node inod
@@ -94,9 +97,12 @@ void analyzenet()
 		else knowntyp[inod] = 1;			//internal nodes are type 1
 		nodeinflow[inod] = 0.;
 		lambda[inod] = 0.;
-		nodpress[inod] = presstarget1;		//set pressure to target on first iteration
+		//set pressures on first iteration with some randomness to avoid zero flow segments
+		nodpress[inod] = presstarget1 + rand()*10. / RAND_MAX - 5.;		
 	}
-	//boundary nodes with known boundary conditions
+	for (iseg = 1; iseg <= nseg; iseg++) hd[iseg] = consthd;		//initialize hematocrits
+	//boundary nodes with known boundary conditions or flow directions
+	for (iseg = 1; iseg <= nseg; iseg++) known_flow_direction[iseg] = 0;
 	for (inodbc = 1; inodbc <= nnodbck; inodbc++) { 		//Search for node corresponding to this node name
 		for (inod = 1; inod <= nnod; inod++) if (nodname[inod] == bcnodname[inodbc]) {
 			if (nodtyp[inod] != 1) printf("*** Error: Known boundary node %i is not a 1-segment node\n", inod);
@@ -110,6 +116,13 @@ void analyzenet()
 				knowntyp[inod] = 2;
 				nodeinflow[inod] = bcprfl[inodbc];
 				numberunknown--;
+			}
+			if (bctyp[inodbc] == -2) {		//known flow direction only
+				knowntyp[inod] = 3;
+				iseg = nodseg[1][inod];
+				if(bcprfl[inodbc] > 0. && inod == ista[iseg]) known_flow_direction[iseg] = 1;
+				else if (bcprfl[inodbc] < 0. && inod == iend[iseg]) known_flow_direction[iseg] = 1;
+				else known_flow_direction[iseg] = -1;
 			}
 			goto foundit;
 		}

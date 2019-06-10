@@ -13,21 +13,16 @@ TWS, August 2018
 #include "nrutil.h"
 
 void Amultiply(double *input, double *output) {
-	extern int nnod, matrixdim;
-	extern int *nodtyp, *knowntyp, *nodelambda;
-	extern int **nodnod;
-	extern double *length_weight, *precond;
-	extern double **hmat, **kmat;
-
+	extern int nnod, *nodtyp, *knowntyp, *nodelambda, **nodnod;
+	extern double *precond, **hmat, **kmat;
 	int inod, i, currentnode;
 
-	for (inod = 1; inod <= nnod; inod++) {						//row in d/dp equations and known p equations (knowntyp = 0,1,2,3)
-		if (knowntyp[inod] == 0) output[inod] = input[inod];	//known pressure node
-		else {
-			output[inod] = input[inod];// *hmat[0][inod] * precond[inod] * precond[inod];	//preconditioner chosen to put 1 on diagonal
+	for (inod = 1; inod <= nnod; inod++) {
+		output[inod] = input[inod];			//row in d/dp equations and known p equations (knowntyp = 0,1,2,3)
+		if (knowntyp[inod] != 0) {			//not known pressure node
 			if (knowntyp[inod] != 3) {
-				output[inod] += input[nodelambda[inod]];// *kmat[0][inod] * precond[inod] * precond[nodelambda[inod]];	//preconditioner chosen to put 1 on diagonal
-				output[nodelambda[inod]] = input[inod];// *kmat[0][inod] * precond[nodelambda[inod]] * precond[inod];	//preconditioner chosen to put 1 on diagonal
+				output[inod] += input[nodelambda[inod]];	//preconditioner chosen to put 1 on diagonal
+				output[nodelambda[inod]] = input[inod];
 			}
 			for (i = 1; i <= nodtyp[inod]; i++) {
 				currentnode = nodnod[i][inod];

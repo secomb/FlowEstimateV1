@@ -157,6 +157,7 @@ void cmgui(float *segvar)
 		is++;
 		in++;
 		if (fabs(segvar[iseg]) < .00000001) { red = 1; blue = 1; green = 1; }	//white
+		//if(iseg == 1836 || iseg == 3431) { red = 0; blue = 0; green = 0; }	//black
 		//write to elements file
 		fprintf(exelem, "Element: %d 0 0\n", is);
 		fprintf(exelem, "  Nodes: %d %d\n", in, in + 1);

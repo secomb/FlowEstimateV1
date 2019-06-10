@@ -4,6 +4,17 @@ Program to estimate flows in microvascular networks
 Brendan Fry, August 2009.
 Modified algorithms by Bohan Li, December 2017.
 Modified by Tim Secomb, August 2018.
+Segment classification by Jeff Lee, Jan. 2019
+*************************************************************************
+Classification of boundary segments is based on: (1) inflow or outflow;
+(2) diameter compared to diamcrit; (3) pressure compared to mean capillary pressure
+Classification codes (revised May 2019 to give better color codes in cmgui):
+	9: Inflow arteriole
+	8: Outflow arteriole
+	7: Inflow capillary
+	6: Outflow capillary
+	5: Inflow venule
+	4: Outflow venule
 *************************************************************************/
 
 #define _CRT_SECURE_NO_DEPRECATE
@@ -14,68 +25,62 @@ Modified by Tim Secomb, August 2018.
 #include <math.h>
 #include <time.h>
 #include "nrutil.h"
-#include <boost/filesystem.hpp>	//needed for copy_file. October 2018
-
-namespace fs = boost::filesystem;
+#if defined(__linux__) 
+//linux goes here
+#elif defined(_WIN32)	//Windows version
+#include <Windows.h>
+#endif
 
 void input(void);
 void analyzenet(void);
 void setuparrays1(int nseg, int nnod);
+void flow(void);
 void cmgui(float *segvar);
 void picturenetwork(float *nodvar, float *segvar, const char fname[]);
-void flowdirections(void);
 void writeflow();
 void analyzeresults();
 void putrank(void);
 
 int mxx, myy, mzz, nseg, nnod, nnodfl, nnodbc, nnodbck, nodsegm, solvetyp;
-int numberknownpress, numberunknown, matrixdim;
+int insideit, numberknownpress, numberunknown, matrixdim;
 int inodbc, currentnod, ktausteps, maxinsideit;
-int nitmax, nitmax1, nsegfl;
-int varyviscosity, phaseseparation;
-int inod, outflow, pressclass, biclass, zclass, ncaps = 0, maxsegs = 5; // Added Jan 2019 for boundary classification 
-int binod, biseg, loops; // Added Jan 2019 for boundary classification 
-int *flow_direction, *actual_direction, *idx;
-int *nk, *nodrank;
-int *nodtyp, *nodout, *bcnodname, *bcnod, *bctyp;
-int *nodname, *segname, *segtyp, *ista, *iend, *knowntyp;
+int nitmax, nitmax1, nsegfl, nitmax2, seed;
+int varyviscosity, phaseseparation, varytargetshear;  
+int *flow_direction, *actual_direction, *idx, *nk, *nodrank;
+int *nodtyp, *nodout, *bcnodname, *bcnod, *bctyp, *known_flow_direction;
+int *nodname, *segname, *segtyp, *ista, *iend, *knowntyp, *nodelambda;
 int **segnodname, **nodseg, **nodnod;
-int *nodelambda;
-float pi1 = atan(1.0)*4.0, lb, maxl, alx, aly, alz;
-float tol, omega, qtol, hdtol, optlam, constvisc, consthd, totallength;
+float pi1 = atan(1.0)*4.0, lb, maxl, alx, aly, alz, known_flow_weight, qf, kappa;
+float tol, omega, qtol, hdtol, optlam, constvisc, consthd, totallength, diamcrit;
 float vplas, optw, diamthresh, mcvcorr, mcv;
 float *diam, *q, *qq, *bcprfl, *nodvar, *segvar, *xsl0, *xsl1, *xsl2;
-float *tau, *hd, *segpress, *bifpar, *bchd, *viscpar, *cpar, *fahrpr;
-float *histogramdisplay;
+float *tau, *hd, *segpress, *bifpar, *bchd, *viscpar, *cpar, *fahrpr, *histogramdisplay;
 float **cnode;
-double presstarget1, sheartarget1, ktau, kpress;
-double pcaps = 0, diamcrit = 8., qd; // Added Jan 2019 for boundary classification 
+double sheartarget1, ktau, kpress, ktaustart, presstarget1, eps, omega1;
 double *sheartarget, *nodpress, *cond, *shearfac, *lambda, *dd, *length_weight, *lseg, *nodeinflow;
-double *precond, *bvector, *xvector;
+double *precond, *bvector, *xvector,  *condsum;
+double *hfactor1, *hfactor2, *hfactor2sum;
 double **hmat, **kmat, **fullmatrix;
 
 FILE *ofp1;
 
 int main(int argc, char *argv[])
 {
-	int iseg;
-	float duration;
+	int inod, iseg, i, numdirectionchange, ncaps, outflow, pressclass;
+	float duration, pcaps;
 	clock_t tstart, tfinish;
 
-	char fname[80];
+#if defined(__linux__) 
+	//linux code goes here
+#elif defined(_WIN32) 			//Windows version
 	bool NoOverwrite = false;
-	FILE *ofp;
-
-	//Create a Current subdirectory using boost filesystem. August 2017. Modified January 2019.
-	if (!fs::exists("Current")) fs::create_directory("Current");
-
-	//copy input data files to "Current" directory
-	fs::copy_file("ContourParams.dat", fs::path("Current/ContourParams.dat"), fs::copy_option::overwrite_if_exists);
-	fs::copy_file("FlowEstParams.dat", fs::path("Current/FlowEstParams.dat"), fs::copy_option::overwrite_if_exists);
-	fs::copy_file("Network.dat", fs::path("Current/Network.dat"), fs::copy_option::overwrite_if_exists);
-	fs::copy_file("RheolParams.dat", fs::path("Current/RheolParams.dat"), fs::copy_option::overwrite_if_exists);
-
-	solvetyp = 2;		//solvetyp: 1 = lu decomposition, 2 = sparse conjugate gradient
+	DWORD ftyp = GetFileAttributesA("Current\\");
+	if (ftyp != FILE_ATTRIBUTE_DIRECTORY) system("mkdir Current");		//Create a Current subdirectory if it does not already exist.
+	CopyFile("ContourParams.dat", "Current\\ContourParams.dat", NoOverwrite); //copy input data files to "Current" directory
+	CopyFile("FlowEstParams.dat", "Current\\FlowEstParams.dat", NoOverwrite);
+	CopyFile("Network.dat", "Current\\Network.dat", NoOverwrite);
+	CopyFile("RheolParams.dat", "Current\\RheolParams.dat", NoOverwrite);
+#endif
 
 	input();
 
@@ -83,114 +88,106 @@ int main(int argc, char *argv[])
 
 	analyzenet();
 
+	for (iseg = 1; iseg <= nseg; iseg++) segvar[iseg] = segname[iseg];
+	cmgui(segvar);		//3D image of network
+	picturenetwork(nodvar, segvar, "Current/NetNodesSegs.ps");	//2D projection of network
+	
 	tstart = clock();
-	flowdirections();	//run flow estimation algorithm
+	ofp1 = fopen("Current/Run_summary.out", "w");
+	fprintf(ofp1, "ktau   press_rms   shear_rms   total_dev\n");
+	fclose(ofp1);
+
+	kappa = 1.;		//factor to cancel bias in shear stress optimization
+
+	for (i = 1; i <= ktausteps; i++) {			//keep doubling ktau
+		if (i == 1) ktau = ktaustart;
+		else ktau = ktau * 2;
+
+		printf("************************ ktau = %6f *********************************\n", ktau);
+		insideit = 1;
+		do {
+			if (i == 1 && insideit == 1) {		// randomize initial flow directions
+				if(seed == 0) srand(clock());		// generate a random seed
+				else srand(seed);	//use a fixed seed
+				for (iseg = 1; iseg <= nseg; iseg++) {
+					if (known_flow_direction[iseg] == 0) {				//not a known flow direction
+						if (rand() % 2 == 1) flow_direction[iseg] = 1;	//target flow direction
+						else flow_direction[iseg] = -1;
+					}
+					else flow_direction[iseg] = known_flow_direction[iseg];	//known flow direction
+				}
+			}
+			///////////////////////////////////
+			flow();	     //calculate flows   //
+			///////////////////////////////////
+			numdirectionchange = 0;
+			for (iseg = 1; iseg <= nseg; iseg++){
+				qf = q[iseg] * flow_direction[iseg];
+				if (qf < 0.) {	//current flow is opposite to target
+					if (known_flow_direction[iseg] == 0) {					//don't do this for known flow directions
+						flow_direction[iseg] = -flow_direction[iseg];		//update target flow direction
+						numdirectionchange++;								//flow changed direction
+					}
+					else printf("*** Warning: Flow in segment %i is not in specified direction\n", segname[iseg]);
+				}
+			}
+			insideit++;
+			if (numdirectionchange > 0) printf("Flow direction changes: %4i\n", numdirectionchange);
+		} while (insideit <= maxinsideit && numdirectionchange > 0);
+	}
+	printf("**************************************************************************\n");
 	tfinish = clock();
 	duration = (float)(tfinish - tstart) / CLOCKS_PER_SEC;
 	printf("%2.1f seconds for flow estimation\n", duration);
 
-
 	analyzeresults();	//statistics and histograms of resulting flows
 
-
-	// Various visualization and debug files
-
-	/* Color coding for CMGUI- Three different routines for classifying
-	type of boundary node:
-	1. Pressure.  Compute average capillary pressure, and for larger vessels
-	classify as arteriole (if higher pressure) or venule (if lower pressure).
-	2. Bifurcation. Trace back pathway to nearest bifurcation.  Converging bifurcations
-	are venules, and diverging bifurcations are arterioles.
-	3. Directionality.  Determine flow direction of boundary segment.  Arterioles
-	characterized as downward in z-direction, and venules characterized as upward.
-	Primarily relevant to brain networks.
-	Classifications:
-	4: Inflow Venule
-	5: Infow Arteriole
-	6: Inflow Capillary
-	7: Outflow Venule
-	8: Outflow Arteriole
-	9: Outflow Capillary
-	*/
-
-	putrank(); // Needed for nodout
-
-	//calculate mean pressure of capillaries
-	for (iseg = 1; iseg <= nseg; iseg++)
-	{
-		if (diam[iseg] <= diamcrit)
-		{
+	//Classification of boundary segments
+	pcaps = 0.;	//calculate mean pressure of flowing capillaries
+	ncaps = 0;
+	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {
+		if (diam[iseg] <= diamcrit) {
 			pcaps += segpress[iseg];
 			ncaps++;
 		}
 	}
-
-	pcaps = pcaps / ncaps;	//pcaps stores average flow
-
-	for (iseg = 1; iseg <= nseg; iseg++) segvar[iseg] = 0; //initialize all segments to 0
-
+	pcaps = pcaps / ncaps; 
+	for (iseg = 1; iseg <= nseg; iseg++) segvar[iseg] = 0.;	//initialize interior segments
 	for (inodbc = 1; inodbc <= nnodbc; inodbc++) {
 		inod = bcnod[inodbc];
 		iseg = nodseg[1][inod];
-
-		// Sort in to inflow and outflow, assuming everything is a capillary
 		if (ista[iseg] == inod && q[iseg] > 0) outflow = 0;
-		else if (iend[iseg] == inod && q[iseg] < 0) outflow = 0; //inflow
-		else outflow = 1;//outflow
-
-		pressclass = 3 * (outflow + 2);
-		biclass = 3 * (outflow + 2);
-		zclass = 3 * (outflow + 2);
-
-		// For larger vessels, sort into inflowing and outflowing arterioles and venules
-		if (diam[iseg] > diamcrit)
-		{
-			// Pressure Classification
-			if (segpress[iseg] < pcaps) pressclass -= 2; //classify as venule
-			else pressclass -= 1; //classify as arteriole
-
-			// Bifurcation Classification
-			binod = inod;
-			biseg = iseg;
-			loops = 0;
-
-			while (nodtyp[binod] < 3 && loops < 5) { // Trace back to closest bifurcation
-				if (ista[biseg] == binod) binod = iend[biseg];
-				else if (iend[biseg] == binod) binod = ista[biseg];
-
-				if (biseg == nodseg[1][binod]) biseg = nodseg[2][binod];
-				else if (biseg == nodseg[2][binod]) biseg = nodseg[1][binod];
-
-				loops++;
-			}
-
-			if (2 * nodout[binod] > nodtyp[binod]) biclass -= 1; // Diverging Bifurcation, classify as arteriole
-			else if (loops == 5) biclass = 0;
-			else biclass -= 2;
-
-			// Direction Classification           
-			if (cnode[3][iend[iseg]] - cnode[3][ista[iseg]] < 0)
-			{ //oriented in positive z direction
-				if (q[iseg] > 0) zclass -= 2; //classify as venule
-				else zclass -= 1; //classify as arteriole
-			}
-			else
-			{
-				if (q[iseg] > 0) zclass -= 1; //classify as arteriole
-				else zclass -= 2; //classify as venule
-			}
+		else if (iend[iseg] == inod && q[iseg] < 0) outflow = 0;
+		else outflow = 1;
+		if (diam[iseg] < diamcrit) {
+			if (outflow) pressclass = 6;		//outflow capillary
+			else pressclass = 7;				//inflow capillary
 		}
-
-		// Color CMGUI boundary nodes using pressure classification
-		segvar[iseg] = (float)(pressclass);
-
-		// Assign boundary node type using pressure classification
-		knowntyp[inod] = pressclass;
+		else {
+			if (segpress[iseg] > pcaps) {	
+				if (outflow) pressclass = 8;	//outflow arteriole
+				else pressclass = 9;			//inflow arteriole
+			}
+			else {
+				if (outflow) pressclass = 4;	//outflow venule
+				else pressclass = 5;			//inflow venule
+			}
+		}		
+		segvar[iseg] = (float)(pressclass - 3);		// Color code boundary segments by classification
+		knowntyp[inod] = pressclass;			// Assign boundary node type by classification
 	}
 
 	writeflow();		//write new network.dat file
-	cmgui(segvar);		//3D image of network
-	picturenetwork(nodvar, segvar, "Current/NetNodesSegs.ps");	//2D projection of network
+
+#if defined(__linux__) 
+//linux code goes here
+#elif defined(_WIN32)			//Windows version
+	CopyFile("NetworkNew.dat", "Current\\NetworkNew.dat", NoOverwrite);
+#endif
+	
+	cmgui(segvar);		//write input files for cmgui visualization
+	
+	picturenetwork(nodvar, segvar, "Current/BoundaryNodeTypes.ps");	//2D projection of network
 
 	return 0;
 }

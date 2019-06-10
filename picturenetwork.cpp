@@ -17,10 +17,10 @@ void picturenetwork(float *nodvar, float *segvar, const char fname[])
 {
 	extern int mxx, myy, mzz, nseg, nnod;
 	extern int *segtyp, *ista, *iend;
-	extern float *diam, **cnode, *xsl0, *xsl1, *xsl2;;
+	extern float *diam, **cnode, *xsl0, *xsl1, *xsl2;
+
 	int i, iseg, inod;
 	float xmin, xmax, ymin, ymax, xs, ys, picfac, red, green, blue, xz, xzmin, xzmax;
-
 	FILE *ofp;
 
 	xmin = 0.;
@@ -59,18 +59,6 @@ void picturenetwork(float *nodvar, float *segvar, const char fname[])
 		blue = FMIN(FMAX(1.5 - 4.*fabs(xz - 0.25), 0.), 1.);
 		green = FMIN(FMAX(1.5 - 4.*fabs(xz - 0.5), 0.), 1.);
 		red = FMIN(FMAX(1.5 - 4.*fabs(xz - 0.75), 0.), 1.);
-		//// These are to show flow directions
-		//if (segvar[iseg] == -1) { // if incorrect flow direction, print segment red
-		//	blue = 0;
-		//	red = 1;
-		//	green = 0;
-		//}
-		//else { // if correct flow direction, print segment green
-		//	blue = 0;
-		//	red = 0;
-		//	green = 1;
-		//}
-		/////////////////////////////////
 		fprintf(ofp, "%f %f %f sc\n", red, green, blue);
 		xs = 0.;
 		ys = 0.;
@@ -86,7 +74,6 @@ void picturenetwork(float *nodvar, float *segvar, const char fname[])
 			ys += (cnode[i][iend[iseg]] - xsl0[i])*(xsl2[i] - xsl0[i]) / ymax;
 		}
 		fprintf(ofp, "%g mx %g my l s \n", xs, ys);
-		//}
 	}
 	//label nodes in black
 	fprintf(ofp, "0 0 0 setrgbcolor\n");//black
@@ -98,11 +85,12 @@ void picturenetwork(float *nodvar, float *segvar, const char fname[])
 			ys += (cnode[i][inod] - xsl0[i])*(xsl2[i] - xsl0[i]) / ymax;
 		}
 		//comment out next two lines to remove node numbers
-		fprintf(ofp, "%g mx %g my m ", xs + 0.5 / picfac, ys);
-		fprintf(ofp, "(%g) show\n", nodvar[inod]);
+		//fprintf(ofp, "%g mx %g my m ", xs + 0.5 / picfac, ys);
+		//fprintf(ofp, "(%g) show\n", nodvar[inod]);
 	}
 	//label segments in blue
-	fprintf(ofp, "0 0 1 setrgbcolor\n");//blue
+	//fprintf(ofp, "0 0 1 setrgbcolor\n");//blue
+	fprintf(ofp, "0 0 0 setrgbcolor\n");//black
 	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {
 		xs = 0.;
 		ys = 0.;

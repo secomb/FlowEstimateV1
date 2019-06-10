@@ -3,6 +3,7 @@ bvector.cpp
 Calculate RHS of linear system for FlowEstimateV1
 Create hmat and kmat, which are needed for Amatrix and Amultiply
 Create symmetric preconditioner to put 1 on diagonals of submatrices
+Used for Methods 1 and 2
 TWS, August 2018
 ************************************************************************/
 #define _CRT_SECURE_NO_DEPRECATE
@@ -19,7 +20,8 @@ void bvectorc(double *output)
 	extern int *nodtyp, *ista, *iend, *knowntyp, *nodelambda;
 	extern int **nodseg, **nodnod;
 	extern double ktau, kpress, presstarget1;
-	extern double *cond, *shearfac, *sheartarget, *nodpress, *length_weight, *lseg, *nodeinflow, *precond;
+	extern double *cond, *shearfac, *sheartarget, *nodpress, *length_weight, *nodeinflow, *precond;
+	extern double *hfactor1, *hfactor2;
 	extern double **hmat, **kmat;
 
 	int i, inod, iseg, currentnode;
@@ -29,8 +31,8 @@ void bvectorc(double *output)
 		kmat[0][inod] = 0.;
 		for (i = 1; i <= nodtyp[inod]; i++) {
 			iseg = nodseg[i][inod];
-			hmat[0][inod] += ktau * lseg[iseg] * SQR(shearfac[iseg] * cond[iseg]);
-			hmat[i][inod] = -ktau * lseg[iseg] * SQR(shearfac[iseg] * cond[iseg]);
+			hmat[0][inod] += hfactor2[iseg];
+			hmat[i][inod] = -hfactor2[iseg];
 			kmat[0][inod] += cond[iseg] *FMAX(1., 1000. * ktau);	//helps keep lambda values O(1), for error control
 			kmat[i][inod] = -cond[iseg] *FMAX(1., 1000. * ktau);	//flip sign of kmat for better convergence of bicgstab
 		}
@@ -46,11 +48,11 @@ void bvectorc(double *output)
 		if (knowntyp[inod] == 0) output[inod] = nodpress[inod];		//1 in diagonal element of K, element of b is the pressure
 		else {
 			output[inod] = kpress * length_weight[inod] * presstarget1;
-			if (knowntyp[inod] != 3) output[nodelambda[inod]] = nodeinflow[inod] * FMAX(1., 1000. * ktau);
+			if (knowntyp[inod] != 3) output[nodelambda[inod]] = nodeinflow[inod] *FMAX(1., 1000. * ktau);
 			for (i = 1; i <= nodtyp[inod]; i++) {
 				iseg = nodseg[i][inod];
-				if (ista[iseg] == inod) output[inod] += ktau * sheartarget[iseg] * shearfac[iseg] * cond[iseg] * lseg[iseg];
-				if (iend[iseg] == inod) output[inod] -= ktau * sheartarget[iseg] * shearfac[iseg] * cond[iseg] * lseg[iseg];				
+				if (ista[iseg] == inod) output[inod] += hfactor1[iseg];
+				if (iend[iseg] == inod) output[inod] -= hfactor1[iseg];
 				currentnode = nodnod[i][inod];
 				if (knowntyp[currentnode] == 0) {	//contributions to RHS from known pressure nodes (moved out of A matrix to make it symmetric)
 					output[inod] -= hmat[i][inod] * nodpress[currentnode];

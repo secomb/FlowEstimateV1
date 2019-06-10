@@ -2,6 +2,7 @@
 cgsymm - for FlowEst2018a  TWS August 2018
 Conjugate gradient method for symmetric system of linear equations:  a(i,j)*x(j) = b(i)
 Modified to use external matrix multiplier
+x is vector of [p lambda]
 Method uses following code from wikipedia:
 -------------------------------------
 function [x] = conjgrad(a,b,x)
@@ -32,7 +33,8 @@ void Amultiply(double *input, double *output);
 double dot(double *a, double *b, int n)
 {
 	double x = 0.;
-	for (int i = 1; i <= n; i++) x += a[i] * b[i];
+	int i;
+	for (i = 1; i <= n; i++) x += a[i] * b[i];
 	return x;
 }
 
@@ -63,7 +65,8 @@ double sparse_cgsymm(double *b, double *x, int n, double eps, int itmax)
 		for (i = 1; i <= n; i++) p[i] = r[i] + rsnew / rsold * p[i];
 		jj++;
 		rsold = rsnew;
-	} while (rsnew > n*eps && jj < itmax);
+		//if (jj % 1000 == 0) printf("cgsymm: %i %e\n", jj, rsnew);
+	} while (rsnew > n*eps*eps && jj < itmax);
 	printf("cgsymm: %i %e\n", jj, rsnew);
 	free_dvector(r, 1, n);
 	free_dvector(v, 1, n);

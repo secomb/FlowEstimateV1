@@ -19,7 +19,7 @@ void writeflow()
 	extern float *diam, *q, *hd, *bcprfl;
 	extern double *nodpress;
 
-	int i, iseg, inod, inodbc, max = 200, type = 2;
+	int i, iseg, inod, inodbc, max = 200, type;
 	float qinput, hdinput;
 	FILE *ifp, *ofp;
 	char bb[200];
@@ -31,9 +31,9 @@ void writeflow()
 		fgets(bb, max, ifp);
 		fprintf(ofp, "%s", bb);
 	}
-	for (iseg = 1; iseg <= nseg; iseg++) {
+	for (iseg = 1; iseg <= nseg; iseg++) {	//update type, flow and hematocrit for each segment
 		fscanf(ifp, "%i %i %i %i %f %f %f",
-			&segname[iseg], &segtyp[iseg], &segnodname[1][iseg], &segnodname[2][iseg], &diam[iseg], &qinput, &hdinput);
+			&segname[iseg], &type, &segnodname[1][iseg], &segnodname[2][iseg], &diam[iseg], &qinput, &hdinput);
 		fgets(bb, max, ifp);
 		fprintf(ofp, "%i %i %i %i %f %f %f",
 			segname[iseg], segtyp[iseg], segnodname[1][iseg], segnodname[2][iseg], diam[iseg], q[iseg], hd[iseg]);
@@ -48,12 +48,9 @@ void writeflow()
 	for (inodbc = 1; inodbc <= nnodbc; inodbc++) {
 		inod = bcnod[inodbc];
 		iseg = nodseg[1][inod];
-		if (inod == ista[iseg]) {
-			fprintf(ofp, "%i %i %f 0.400 50.000\n", nodname[inod], knowntyp[inod], q[iseg]);
-		}
-		else {
-			fprintf(ofp, "%i %i %f 0.400 50.000\n", nodname[inod], knowntyp[inod], -q[iseg]);
-		}
+		//node that clasification codes 4 to 9 are placed in the Bctype field
+		if (inod == ista[iseg]) fprintf(ofp, "%i %i %f 0.400 50.000\n", nodname[inod], knowntyp[inod], q[iseg]);
+		else fprintf(ofp, "%i %i %f 0.400 50.000\n", nodname[inod], knowntyp[inod], -q[iseg]);
 	}
 	fclose(ifp);
 	fclose(ofp);
