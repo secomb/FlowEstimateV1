@@ -9,7 +9,7 @@ CC=g++ # define the compiler to use
 TARGET=flowEstimate # define the name of the executable
 SOURCES=Amatrix.cpp Amultiply.cpp analyzenet.cpp analyzeresults.cpp bvector.cpp cmgui.cpp dishem.cpp flow.cpp flowdirections.cpp histogram.cpp input.cpp ludcmp.cpp main.cpp nrutil.cpp picturenetwork.cpp putrank.cpp setuparrays1.cpp sparse_cgsymm.cpp viscor.cpp writeflow.cpp # list source files
 CFLAGS=-O3
-LFLAGS=-Wall -lm -lboost_filesystem -lboost_system
+LFLAGS=-Wall -lm 
 
 # define list of objects
 OBJSC=$(SOURCES:.c=.o)
@@ -19,7 +19,7 @@ OBJS=$(OBJSC:.cpp=.o)
 all: $(SOURCES) $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(LFLAGS) $(OBJS) -o $(TARGET)
+	$(CC) $(LFLAGS) $(OBJS) -o $(TARGET) -lstdc++fs
 
 purge: clean
 	rm -f $(TARGET)

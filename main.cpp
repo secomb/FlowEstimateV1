@@ -25,10 +25,17 @@ Classification codes (revised May 2019 to give better color codes in cmgui):
 #include <math.h>
 #include <time.h>
 #include "nrutil.h"
-#if defined(__linux__) 
-//linux goes here
-#elif defined(_WIN32)	//Windows version
-#include <Windows.h>
+
+#if defined(__linux__)
+	// Requires c++17 support, should be included in all current linux releases
+	#include <experimental/filesystem> 
+	namespace fs = std::experimental::filesystem::v1;
+#elif defined(__APPLE__)
+	// Requires removal of the -lstdc++fs flag from makefile
+	#include <filesystem>
+	namespace fs = std::filesystem;
+#elif defined(_WIN32)    //Windows version
+	#include <Windows.h>
 #endif
 
 void input(void);
@@ -69,18 +76,26 @@ int main(int argc, char *argv[])
 	int inod, iseg, i, numdirectionchange, ncaps, outflow, pressclass;
 	float duration, pcaps;
 	clock_t tstart, tfinish;
+	FILE *ofp;
 
-#if defined(__linux__) 
-	//linux code goes here
-#elif defined(_WIN32) 			//Windows version
-	bool NoOverwrite = false;
-	DWORD ftyp = GetFileAttributesA("Current\\");
-	if (ftyp != FILE_ATTRIBUTE_DIRECTORY) system("mkdir Current");		//Create a Current subdirectory if it does not already exist.
-	CopyFile("ContourParams.dat", "Current\\ContourParams.dat", NoOverwrite); //copy input data files to "Current" directory
-	CopyFile("FlowEstParams.dat", "Current\\FlowEstParams.dat", NoOverwrite);
-	CopyFile("Network.dat", "Current\\Network.dat", NoOverwrite);
-	CopyFile("RheolParams.dat", "Current\\RheolParams.dat", NoOverwrite);
-#endif
+	//Create a Current subdirectory if needed. Copy data files to it.
+	#if defined(__unix__)
+		if (!fs::exists("Current")) fs::create_directory("Current");
+		fs::copy_file("ContourParams.dat", fs::path("Current/ContourParams.dat"), fs::copy_options::overwrite_existing);
+		fs::copy_file("FlowEstParams.dat", fs::path("Current/FlowEstParams.dat"), fs::copy_options::overwrite_existing);
+		fs::copy_file("Network.dat", fs::path("Current/Network.dat"), fs::copy_options::overwrite_existing);
+		fs::copy_file("RheolParams.dat", fs::path("Current/RheolParams.dat"), fs::copy_options::overwrite_existing);
+	#elif defined(_WIN32)
+		BOOL NoOverwrite = FALSE;
+		DWORD ftyp = GetFileAttributesA("Current\\");
+		if (ftyp != FILE_ATTRIBUTE_DIRECTORY) system("mkdir Current");
+		CopyFile("ContourParams.dat", "Current\\ContourParams.dat", NoOverwrite);
+		CopyFile("FlowEstParams.dat", "Current\\FlowEstParams.dat", NoOverwrite);
+		CopyFile("Network.dat", "Current\\Network.dat", NoOverwrite);
+		CopyFile("RheolParams.dat", "Current\\RheolParams.dat", NoOverwrite);
+	#endif
+		
+	solvetyp = 2;		//solvetyp: 1 = lu decomposition, 2 = sparse conjugate gradient
 
 	input();
 

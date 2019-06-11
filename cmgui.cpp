@@ -5,7 +5,7 @@ Produces greens.exelem and greens.exnode
 To visualize, use CMGUI (e.g. cmgui_install.msi) at:
 http://sourceforge.net/projects/cmiss/files/cmgui/cmgui-wx-2.8.0/
 Start CMGUI, File > Open > Com File
-Navigate to the directory containing the data files and select greens.com.txt (as listed below).
+Navigate to the directory contaning the data files and select greens.com.txt (as listed below).
 At the bottom of the window that pops up, click the All button.  Change the view with the Layout,
 Up and Front selections on the left hand side of the Graphics window.  Rotate by holding the left
 button down and moving the mouse, pan with the middle button and zoom with the right button.
@@ -42,10 +42,15 @@ gfx mod win 1 view perspective
 #define _CRT_SECURE_NO_DEPRECATE
 
 #include <cstdio>
-#include <malloc.h>
 #include <math.h>
 #include <string.h>
 #include "nrutil.h"
+
+# if defined(__APPLE__)
+	#include <malloc/malloc.h>
+#else
+	#include <malloc.h>
+#endif
 
 void WriteExnodeHeader(FILE *exnode) // Write initial section of .exnode file
 {
