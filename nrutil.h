@@ -8,7 +8,7 @@ static double dsqrarg;
 #define DSQR(a) ((dsqrarg=(a)) == 0.0 ? 0.0 : dsqrarg*dsqrarg)
 
 static double dmaxarg1,dmaxarg2;
-#define DMAX(a,b) (dmaxargl=(a) ,dmaxarg2=(b) , (dmaxarg1) > (dmaxarg2) ? (dmaxarg1) : (dmaxarg2))
+#define DMAX(a,b) (dmaxarg1=(a) ,dmaxarg2=(b) , (dmaxarg1) > (dmaxarg2) ? (dmaxarg1) : (dmaxarg2))
 
 static double dminarg1,dminarg2;
 #define DMIN(a,b) (dminarg1=(a) ,dminarg2=(b), (dminarg1) < (dminarg2) ? (dminarg1) : (dminarg2))
