@@ -1,5 +1,5 @@
 /************************************************************************
-flow - for FlowEst2018
+flow - for FlowEstV1
 Flows in nl/min, pressures in mmHg, viscosity in cP, shear stress in dyn/cm2
 Lengths, diameters in microns, times in s
 Use double precision pressures for networks with many segments
@@ -40,6 +40,12 @@ knowntyp	0 for known pressures - Nkp
 ***********************************************************************
 solvetyp	1 lu decomposition
 			2 sparse conjugate gradient
+************************************************************************
+Factor kappa multiplying target shear stress introduced to compensate
+for bias in least squares estimation. 
+kappa = mean(tau^2)/(mean(tau))^2
+Otherwise, estimated tau values are biased to be small, because this 
+reduces the variance in tau. TWS, May 2019.
 ************************************************************************/
 #define _CRT_SECURE_NO_DEPRECATE
 
