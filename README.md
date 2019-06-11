@@ -73,10 +73,7 @@ Updates June 2019
 
 2. An option has been added to use the successive over-relaxation method to solve the matrix system at each iteration (solvetype = 3). This method may be faster than the sparse conjugate gradient method (solvetype = 2) in some cases.
 
-3. A factor kappa was introduced multiplying the target shear stress values in the objective function, where
-kappa = mean(tau^2)/(mean(tau))^2
-This is needed to compensate for bias in least squares estimation. 
-Otherwise, estimated tau values are biased to be small, because this reduces the variance in tau.
+3. A factor kappa was introduced multiplying the target shear stress values in the objective function, where kappa = mean(tau^2)/(mean(tau))^2. This is needed to compensate for bias in least squares estimation. Otherwise, estimated tau values are biased to be small, because this reduces the variance in tau.
 
 4. On output, all boundary segments are classified according to the following scheme:
 	9: Inflow arteriole
@@ -84,7 +81,7 @@ Otherwise, estimated tau values are biased to be small, because this reduces the
 	7: Inflow capillary
 	6: Outflow capillary
 	5: Inflow venule
-	4: Outflow venule
+	4: Outflow venule.
 This classification is based on (1) inflow or outflow;
 (2) diameter compared to diamcrit; (3) pressure compared to mean capillary pressure.
 
