@@ -1,4 +1,4 @@
-FlowEstimateV1
+﻿FlowEstimateV1
 
 The purpose of this program is to estimate blood flows in a network of microvessels with known geometry, but with incomplete boundary conditions. If a complete set of boundary conditions is given, then NetFlowV1 can be used: see https://physiology.arizona.edu/people/secomb/netflow.
 
@@ -65,4 +65,29 @@ network.exelem, network.exenode and cmgui.com.txt can be used to obtain 3D visua
 
 6. This program is freely available for non-commercial use, provided appropriate acknowledgement is given. Commercial users please contact us before using this program. No assurance is given that it is free of errors and any use is at the user’s risk.
 
-Updated August 2018
++++++++++++++++++++++++++++++++++++++++
+
+Updates June 2019
+
+1. An option has been added to specify flow direction in boundary segments without specifying flow rate. This is done by setting bctyp[inodbc] = -2 in the boundary conditions section of network.dat. A fixed weight (known_flow_weight) is placed on that segment in the objective function. Note that the flow could possibly still be reversed from the specified direction.
+
+2. An option has been added to use the successive over-relaxation method to solve the matrix system at each iteration (solvetype = 3). This method may be faster than the sparse conjugate gradient method (solvetype = 2) in some cases.
+
+3. A factor kappa was introduced multiplying the target shear stress values in the objective function, where
+kappa = mean(tau^2)/(mean(tau))^2
+This is needed to compensate for bias in least squares estimation. 
+Otherwise, estimated tau values are biased to be small, because this reduces the variance in tau.
+
+4. On output, all boundary segments are classified according to the following scheme:
+	9: Inflow arteriole
+	8: Outflow arteriole
+	7: Inflow capillary
+	6: Outflow capillary
+	5: Inflow venule
+	4: Outflow venule
+This classification is based on (1) inflow or outflow;
+(2) diameter compared to diamcrit; (3) pressure compared to mean capillary pressure.
+
+5. Note the modified format of FlowEstParams.dat, with additional parameters according to the changes listed above. 
+
+Updated June, 2019
