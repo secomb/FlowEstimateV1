@@ -71,9 +71,9 @@ Updates June 2019
 
 1. An option has been added to specify flow direction in boundary segments without specifying flow rate. This is done by setting bctyp[inodbc] = -2 in the boundary conditions section of network.dat. A fixed weight (known_flow_weight) is placed on that segment in the objective function. Note that the flow could possibly still be reversed from the specified direction.
 
-2. We now offer three choices of linear solver, specified by the parameter solvetyp in FlowEstParams.dat:
-solvetyp = 1: LU decomposition, suitable for small networks, up to about 1000 nodes.
-solvetyp = 2: Sparse conjugate gradient method. This method is robust but slow for very large networks (e.g. 25000 nodes).
+2. We now offer three choices of linear solver, specified by the parameter solvetyp in FlowEstParams.dat:  
+solvetyp = 1: LU decomposition, suitable for small networks, up to about 1000 nodes.  
+solvetyp = 2: Sparse conjugate gradient method. This method is robust but slow for very large networks (e.g. 25000 nodes).  
 solvetyp = 3: Successive over-relaxation. This method can be faster than method 2 in some cases, but requires careful optimization of relaxation parameters nitmax3 and omega2. If omega2 is too large, the iteration diverges. If omega2 is too small, convergence is slow. The best range for nitmax3 seems to be around 40, but this may depend on network properties. 
 
 3. A factor kappa was introduced multiplying the target shear stress values in the objective function, where kappa = mean(tau^2)/(mean(tau))^2. This is needed to compensate for bias in least squares estimation. Otherwise, estimated tau values are biased to be small, because this reduces the variance in tau.
