@@ -65,7 +65,7 @@ double sparse_cgsymm(double *b, double *x, int n, double eps, int itmax)
 		for (i = 1; i <= n; i++) p[i] = r[i] + rsnew / rsold * p[i];
 		jj++;
 		rsold = rsnew;
-		//if (jj % 1000 == 0) printf("cgsymm: %i %e\n", jj, rsnew);
+		if (jj % 10000 == 0) printf("cgsymm: %i %e\n", jj, rsnew);
 	} while (rsnew > n*eps*eps && jj < itmax);
 	printf("cgsymm: %i %e\n", jj, rsnew);
 	free_dvector(r, 1, n);

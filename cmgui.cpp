@@ -46,12 +46,6 @@ gfx mod win 1 view perspective
 #include <string.h>
 #include "nrutil.h"
 
-# if defined(__APPLE__)
-	#include <malloc/malloc.h>
-#else
-	#include <malloc.h>
-#endif
-
 void WriteExnodeHeader(FILE *exnode) // Write initial section of .exnode file
 {
 	//    fprintf(exnode, "Region: /vessels\n");
@@ -146,14 +140,14 @@ void cmgui(float *segvar)
 
 	xzmin = 1.e6;
 	xzmax = -1.e6;
-	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {
+	for (iseg = 1; iseg <= nseg; iseg++) {
 		xzmin = FMIN(xzmin, segvar[iseg]);
 		xzmax = FMAX(xzmax, segvar[iseg]);
 	}
 
 	is = 0;
 	in = 0;
-	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {
+	for (iseg = 1; iseg <= nseg; iseg++) {
 		if (xzmin != xzmax) xz = (segvar[iseg] - xzmin) / (xzmax - xzmin);
 		else xz = 0.75;
 		blue = FMIN(FMAX(1.5 - 4.*fabs(xz - 0.25), 0.), 1.);	//Set up colors using Matlab 'jet' scheme

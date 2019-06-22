@@ -40,6 +40,7 @@ knowntyp	0 for known pressures - Nkp
 ***********************************************************************
 solvetyp	1 lu decomposition
 			2 sparse conjugate gradient
+			3 successive over-relaxation
 ************************************************************************
 Factor kappa multiplying target shear stress introduced to compensate
 for bias in least squares estimation. 
@@ -169,7 +170,7 @@ void flow()
 	duration = (float)(tfinish - tstart) / CLOCKS_PER_SEC;
 	printf("Iteration %i: %2.1f seconds for solution by method %i\n", insideit, duration, solvetyp);
 	///////////////// Process results ///////////////
-	kappasum1 = 0.;
+	kappasum1 = 0.;	//update kappa factor according to results from previous iteration
 	kappasum2 = 0.;
 	for (iseg = 1; iseg <= nseg; iseg++) {
 		q[iseg] = (nodpress[ista[iseg]] - nodpress[iend[iseg]])*cond[iseg];			// qj = (p1-p2)*gj
@@ -180,7 +181,6 @@ void flow()
 	kappasum1 = kappasum1 / totallength;
 	kappasum2 = kappasum2 / totallength;
 	kappa = kappasum2 / SQR(kappasum1);
-	printf("*** kappa = %f\n", kappa);
 
 	notconservedcount = 0;		// check whether flow is conserved
 	for (inod = 1; inod <= nnod; inod++) if (knowntyp[inod] == 1) {
@@ -209,7 +209,7 @@ void flow()
 	shear_rms = sqrt(shear_rms);
 
 	ofp1 = fopen("Current/Run_summary.out", "a");
-	fprintf(ofp1, "%f %f %f %f\n", ktau, press_rms, shear_rms, total_dev);
+	fprintf(ofp1, "%f %f %f %f %f\n", ktau, press_rms, shear_rms, total_dev, kappa);
 	fclose(ofp1);
 
 	if (phaseseparation == 1 && ktau > 0.) {	// update hematocrit, but not for ktau = 0 because this gives some zero flows

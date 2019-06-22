@@ -1,8 +1,9 @@
 /*****************************************************
 Evaluate histograms of solute levels.  TWS December 07.
 Version 2.0, May 1, 2010.
-Version 3.0, Ma7 17,2011.
+Version 3.0, May 17,2011.
 Revised Bohan Li, 2018.
+Added weighting of data, June 2019.
 ******************************************************/
 #define _CRT_SECURE_NO_DEPRECATE
 
@@ -11,12 +12,12 @@ Revised Bohan Li, 2018.
 #include <stdio.h>
 #include <string.h>
 
-void histogram(float *var, int n, const char filename[])
+void histogram(float *var, float *weight, int n, const char filename[])
 {
-	int i, j, itp, nctop, ncbot, numbins = 101, imaxstat;
+	int i, j, nctop, ncbot, numbins = 101, imaxstat;
 	float step = 1e6, dev, xmax, ymax, scalefacx, scalefacy, xshift;
 	float *stepmax, *stat, *cumu, *mstat;
-	float mean = 0, min = 1e15, max = 0, maxstat = 0;
+	float mean = 0, min = 1e15, max = 0, maxstat = 0, weightsum = 0;
 	char histogramimagename[100];
 	FILE *ofp;
 
@@ -24,11 +25,12 @@ void histogram(float *var, int n, const char filename[])
 	strcat(histogramimagename, ".ps");
 
 	for (i = 1; i <= n; i++) {
-		mean += var[i];
+		mean += var[i] * weight[i];
+		weightsum += weight[i];
 		if (min > var[i]) min = var[i];
 		if (max < var[i]) max = var[i];
 	}
-	mean = mean / n;
+	mean = mean / weightsum;
 
 	for (i = 0; i <= 36; i++) {
 		numbins = (int(floor(max / step)) - int(floor(min / step)) + 1);
@@ -53,19 +55,19 @@ done:;
 		stepmax[i] = step * (i + ncbot);
 		mstat[i] = 0;
 	}
-	for (itp = 1; itp <= n; itp++) {
-		dev = dev + SQR(mean - var[itp]);
-		for (j = 1; j <= numbins; j++)	if (var[itp] < stepmax[j]) {
-			mstat[j]++;
+	for (i = 1; i <= n; i++) {
+		dev = dev + SQR(mean - var[i]) * weight[i];
+		for (j = 1; j <= numbins; j++)	if (var[i] < stepmax[j]) {
+			mstat[j] += weight[i];
 			goto binned;
 		}
 	binned:;
 	}
 
-	dev = sqrt(dev / n);
+	dev = sqrt(dev / weightsum);
 	for (i = 1; i <= numbins; i++) {
-		stat[i] = mstat[i] * 100. / n;
-		maxstat = FMAX(maxstat, stat[i]);;
+		stat[i] = mstat[i] * 100. / weightsum;
+		maxstat = FMAX(maxstat, stat[i]);
 	}
 	imaxstat = (maxstat + 5.) / 5.;
 	cumu[1] = stat[1];

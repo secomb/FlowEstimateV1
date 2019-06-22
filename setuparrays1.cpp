@@ -18,7 +18,7 @@ void setuparrays1(int nseg, int nnod)
 	extern int *nk, *nodrank;
 	extern int **nodnod, **nodseg;
 	extern float *tau, *segpress, *qq, *nodvar, *segvar, *bchd;
-	extern float *histogramdisplay;
+	extern float *histogramdisplay, *histogramweight;
 	extern double *length_weight, *lambda, *nodeinflow;
 	extern double *cond, *nodpress, *condsum, *hfactor2sum;
 	extern double *sheartarget, *shearfac, *hfactor1, *hfactor2;
@@ -58,4 +58,5 @@ void setuparrays1(int nseg, int nnod)
 	hmat = dmatrix(0, nodsegm, 1, nnod); // nodsegm = max number of segments allowed per node
 	kmat = dmatrix(0, nodsegm, 1, nnod);
 	histogramdisplay = vector(1, LMAX(nseg, nnod)); 	// added for histogram display
+	histogramweight = vector(1, LMAX(nseg, nnod)); 	// added for histogram display
 }

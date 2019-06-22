@@ -25,7 +25,7 @@ void putrank(void)
 		nodout[inod] = 0;
 	}
 	nsegfl = 0;	//added TWS 2010
-	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {//segtypes 4 and 5 are flowing segments; all segments in this network are flowing
+	for (iseg = 1; iseg <= nseg; iseg++) {//segtypes 4 and 5 are flowing segments; all segments in this network are flowing
 		if (q[iseg] >= 0) {
 			nod1 = ista[iseg];
 			nod2 = iend[iseg];
@@ -41,7 +41,7 @@ void putrank(void)
 		nodout[nod1]++;//nodout is the number of segments for which blood flows from the node to the segment
 		nsegfl++;
 	}
-	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {//two for loops guarantees that the outflow nodes come first
+	for (iseg = 1; iseg <= nseg; iseg++) { //two for loops guarantees that the outflow nodes come first
 		if (q[iseg] >= 0) {
 			nod1 = ista[iseg];
 			nod2 = iend[iseg];

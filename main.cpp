@@ -42,6 +42,7 @@ void input(void);
 void analyzenet(void);
 void setuparrays1(int nseg, int nnod);
 void flow(void);
+void flowtest();
 void cmgui(float *segvar);
 void picturenetwork(float *nodvar, float *segvar, const char fname[]);
 void writeflow();
@@ -51,7 +52,7 @@ void putrank(void);
 int mxx, myy, mzz, nseg, nnod, nnodfl, nnodbc, nnodbck, nodsegm, solvetyp;
 int insideit, numberknownpress, numberunknown, matrixdim;
 int inodbc, currentnod, ktausteps, maxinsideit;
-int nitmax, nitmax1, nsegfl, nitmax2, seed;
+int nitmax, nitmax1, nsegfl, nitmax2, nitmax3, seed;
 int varyviscosity, phaseseparation, varytargetshear;  
 int *flow_direction, *actual_direction, *idx, *nk, *nodrank;
 int *nodtyp, *nodout, *bcnodname, *bcnod, *bctyp, *known_flow_direction;
@@ -61,9 +62,9 @@ float pi1 = atan(1.0)*4.0, lb, maxl, alx, aly, alz, known_flow_weight, qf, kappa
 float tol, omega, qtol, hdtol, optlam, constvisc, consthd, totallength, diamcrit;
 float vplas, optw, diamthresh, mcvcorr, mcv;
 float *diam, *q, *qq, *bcprfl, *nodvar, *segvar, *xsl0, *xsl1, *xsl2;
-float *tau, *hd, *segpress, *bifpar, *bchd, *viscpar, *cpar, *fahrpr, *histogramdisplay;
+float *tau, *hd, *segpress, *bifpar, *bchd, *viscpar, *cpar, *fahrpr, *histogramdisplay, *histogramweight;
 float **cnode;
-double sheartarget1, ktau, kpress, ktaustart, presstarget1, eps, omega1;
+double sheartarget1, ktau, kpress, ktaustart, presstarget1, eps, omega1, omega2;
 double *sheartarget, *nodpress, *cond, *shearfac, *lambda, *dd, *length_weight, *lseg, *nodeinflow;
 double *precond, *bvector, *xvector,  *condsum;
 double *hfactor1, *hfactor2, *hfactor2sum;
@@ -73,10 +74,9 @@ FILE *ofp1;
 
 int main(int argc, char *argv[])
 {
-	int inod, iseg, i, numdirectionchange, ncaps, outflow, pressclass;
-	float duration, pcaps;
+	int inod, iseg, i, numdirectionchange, outflow, pressclass;
+	float duration, pcaps, totallength1;
 	clock_t tstart, tfinish;
-	FILE *ofp;
 
 	//Create a Current subdirectory if needed. Copy data files to it.
 	#if defined(__unix__)
@@ -95,11 +95,11 @@ int main(int argc, char *argv[])
 		CopyFile("RheolParams.dat", "Current\\RheolParams.dat", NoOverwrite);
 	#endif
 		
-	solvetyp = 2;		//solvetyp: 1 = lu decomposition, 2 = sparse conjugate gradient
-
 	input();
 
 	setuparrays1(nseg, nnod);
+
+	flowtest();	//removes zero-flow segments: renumbers nodes and segments
 
 	analyzenet();
 
@@ -109,14 +109,14 @@ int main(int argc, char *argv[])
 	
 	tstart = clock();
 	ofp1 = fopen("Current/Run_summary.out", "w");
-	fprintf(ofp1, "ktau   press_rms   shear_rms   total_dev\n");
+	fprintf(ofp1, "ktau   press_rms   shear_rms   total_dev   kappa\n");
 	fclose(ofp1);
 
-	kappa = 1.;		//factor to cancel bias in shear stress optimization
+	kappa = 1.;		//initialize factor to cancel bias in shear stress optimization
 
-	for (i = 1; i <= ktausteps; i++) {			//keep doubling ktau
+	for (i = 1; i <= ktausteps + 3; i++) {			//keep doubling ktau, then three extra iterations
 		if (i == 1) ktau = ktaustart;
-		else ktau = ktau * 2;
+		else if (i <= ktausteps) ktau = ktau * 2;
 
 		printf("************************ ktau = %6f *********************************\n", ktau);
 		insideit = 1;
@@ -158,15 +158,15 @@ int main(int argc, char *argv[])
 	analyzeresults();	//statistics and histograms of resulting flows
 
 	//Classification of boundary segments
-	pcaps = 0.;	//calculate mean pressure of flowing capillaries
-	ncaps = 0;
-	for (iseg = 1; iseg <= nseg; iseg++) if (segtyp[iseg] == 4 || segtyp[iseg] == 5) {
+	pcaps = 0.;	//calculate length-weighted mean pressure of flowing capillaries
+	totallength1 = 0.;
+	for (iseg = 1; iseg <= nseg; iseg++) if (qq[iseg] > 0.) {
 		if (diam[iseg] <= diamcrit) {
-			pcaps += segpress[iseg];
-			ncaps++;
+			pcaps += segpress[iseg] * lseg[iseg];
+			totallength1 += lseg[iseg];
 		}
 	}
-	pcaps = pcaps / ncaps; 
+	pcaps = pcaps / totallength1;
 	for (iseg = 1; iseg <= nseg; iseg++) segvar[iseg] = 0.;	//initialize interior segments
 	for (inodbc = 1; inodbc <= nnodbc; inodbc++) {
 		inod = bcnod[inodbc];
@@ -194,8 +194,8 @@ int main(int argc, char *argv[])
 
 	writeflow();		//write new network.dat file
 
-#if defined(__linux__) 
-//linux code goes here
+#if defined(__unix__)			//Apple, linux
+	fs::copy_file("NetworkNew.dat", fs::path("Current/NetworkNew.dat"), fs::copy_options::overwrite_existing);
 #elif defined(_WIN32)			//Windows version
 	CopyFile("NetworkNew.dat", "Current\\NetworkNew.dat", NoOverwrite);
 #endif

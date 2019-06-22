@@ -3,6 +3,11 @@ Amultiply.cpp
 Multiply given vector by symmetric matrix for FlowEst2018
 Sparse version, with preconditioning
 TWS, August 2018
+*************************************************************************
+knowntyp	0 for known pressures
+			1 for interior nodes
+			2 for known flow boundary conditions
+			3 for unknown boundary conditions
 ************************************************************************/
 #define _CRT_SECURE_NO_DEPRECATE
 
@@ -17,11 +22,11 @@ void Amultiply(double *input, double *output) {
 	extern double *precond, **hmat, **kmat;
 	int inod, i, currentnode;
 
-	for (inod = 1; inod <= nnod; inod++) {
-		output[inod] = input[inod];			//row in d/dp equations and known p equations (knowntyp = 0,1,2,3)
+	for (inod = 1; inod <= nnod; inod++) {	//preconditioner chosen to put 1 on "diagonals"
+		output[inod] = input[inod];
 		if (knowntyp[inod] != 0) {			//not known pressure node
-			if (knowntyp[inod] != 3) {
-				output[inod] += input[nodelambda[inod]];	//preconditioner chosen to put 1 on diagonal
+			if (knowntyp[inod] != 3) {		//has an associated constraint
+				output[inod] += input[nodelambda[inod]];
 				output[nodelambda[inod]] = input[inod];
 			}
 			for (i = 1; i <= nodtyp[inod]; i++) {

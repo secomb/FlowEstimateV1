@@ -11,7 +11,7 @@ Sample FlowEstParams
 63.5	target shear stress for fixed target (dyn/cm2)
 0.001	ktaustart, starting value of ktau
 10		number of ktau steps, doubling each time
-5		max number of runss for each tau value
+5		max number of runs for each tau value
 *******************************************************/
 #define _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_WARNINGS
@@ -27,7 +27,7 @@ void input(void)
 	extern int nmaxvessel, nmaxtissue, nmax, ktausteps, maxinsideit, solvetyp;
 	extern int mxx, myy, mzz, nseg, nnod, nnodbck, nodsegm, seed;
 	extern int nitmax, nitmax1, varyviscosity, phaseseparation, varytargetshear;
-	extern int nitmax2;
+	extern int nitmax2, nitmax3;
 	extern int *bcnodname, *bctyp, *actual_direction;
 	extern int *segname, *segtyp, *nodname;
 	extern int **segnodname, **nodseg;
@@ -38,11 +38,11 @@ void input(void)
 	extern float *diam, *q, *hd, *bcprfl, *bchd, *xsl0, *xsl1, *xsl2;
 	extern float **cnode;
 
-	extern double *lseg, presstarget1, sheartarget1, ktaustart, eps, omega1;
+	extern double *lseg, presstarget1, sheartarget1, ktaustart, eps, omega1, omega2;
 
-	int i, iseg, max = 100;
+	int i, iseg, max = 200;
 	FILE *ifp;
-	char bb[100];
+	char bb[200];
 
 	ifp = fopen("Network.dat", "r");		// read network.dat
 	if (ifp == NULL) perror("Error opening file");
@@ -130,7 +130,8 @@ void input(void)
 		fscanf(ifp, "%i %*[^\n]", &maxinsideit);
 		fscanf(ifp, "%lf %*[^\n]", &eps);
 		fscanf(ifp, "%i %*[^\n]", &nitmax2);
-		fscanf(ifp, "%lf %*[^\n]", &omega1);
+		fscanf(ifp, "%i %*[^\n]", &nitmax3);
+		fscanf(ifp, "%lf %lf %*[^\n]", &omega1, &omega2);
 		fscanf(ifp, "%f %*[^\n]", &diamcrit);
 		fscanf(ifp, "%f %*[^\n]", &known_flow_weight);
 		fscanf(ifp, "%i %*[^\n]", &seed);
