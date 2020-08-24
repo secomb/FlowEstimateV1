@@ -4,17 +4,17 @@ Program to estimate flows in microvascular networks
 Brendan Fry, August 2009.
 Modified algorithms by Bohan Li, December 2017.
 Modified by Tim Secomb, August 2018.
-Segment classification by Jeff Lee, Jan. 2019
+Segment classification by Grace Lee, Jan. 2019
 *************************************************************************
 Classification of boundary segments is based on: (1) inflow or outflow;
 (2) diameter compared to diamcrit; (3) pressure compared to mean capillary pressure
 Classification codes (revised May 2019 to give better color codes in cmgui):
-	9: Inflow arteriole
-	8: Outflow arteriole
-	7: Inflow capillary
-	6: Outflow capillary
-	5: Inflow venule
-	4: Outflow venule
+	9: Inflow arteriole     Dark Red
+	8: Outflow arteriole    Light Red
+	7: Inflow capillary     Yellow
+	6: Outflow capillary    Green
+	5: Inflow venule        Light Blue
+    4: Outflow venule       Dark Blue
 *************************************************************************/
 
 #define _CRT_SECURE_NO_DEPRECATE
@@ -54,12 +54,12 @@ int insideit, numberknownpress, numberunknown, matrixdim;
 int inodbc, currentnod, ktausteps, maxinsideit;
 int nitmax, nitmax1, nsegfl, nitmax2, nitmax3, seed;
 int varyviscosity, phaseseparation, varytargetshear;  
-int *flow_direction, *actual_direction, *idx, *nk, *nodrank;
+int *flow_direction, *actual_direction, *idx, *nk, *nodrank, *segclasstyp, *nodclasstyp;
 int *nodtyp, *nodout, *bcnodname, *bcnod, *bctyp, *known_flow_direction;
 int *nodname, *segname, *segtyp, *ista, *iend, *knowntyp, *nodelambda;
 int **segnodname, **nodseg, **nodnod;
 float pi1 = atan(1.0)*4.0, lb, maxl, alx, aly, alz, known_flow_weight, qf, kappa;
-float tol, omega, qtol, hdtol, optlam, constvisc, consthd, totallength, diamcrit;
+float tol, omega, qtol, hdtol, optlam, constvisc, consthd, totallength, diamcrit, diamcorr;
 float vplas, optw, diamthresh, mcvcorr, mcv;
 float *diam, *q, *qq, *bcprfl, *nodvar, *segvar, *xsl0, *xsl1, *xsl2;
 float *tau, *hd, *segpress, *bifpar, *bchd, *viscpar, *cpar, *fahrpr, *histogramdisplay, *histogramweight;
@@ -70,11 +70,12 @@ double *precond, *bvector, *xvector,  *condsum;
 double *hfactor1, *hfactor2, *hfactor2sum;
 double **hmat, **kmat, **fullmatrix;
 
+float *tmpordart, *tmpordvein;
 FILE *ofp1;
 
 int main(int argc, char *argv[])
 {
-	int inod, iseg, i, numdirectionchange, outflow, pressclass;
+	int inod, iseg, i, numdirectionchange, outflow, pressclass, ktausteps1;
 	float duration, pcaps, totallength1;
 	clock_t tstart, tfinish;
 
@@ -99,6 +100,11 @@ int main(int argc, char *argv[])
 
 	setuparrays1(nseg, nnod);
 
+    for (iseg = 1; iseg <=nseg; iseg++) diam[iseg] += diamcorr;
+
+	if (seed == 0) srand(clock());		// generate a random seed, needed by flowtest
+	else srand(seed);	//use a fixed seed
+
 	flowtest();	//removes zero-flow segments: renumbers nodes and segments
 
 	analyzenet();
@@ -114,7 +120,10 @@ int main(int argc, char *argv[])
 
 	kappa = 1.;		//initialize factor to cancel bias in shear stress optimization
 
-	for (i = 1; i <= ktausteps + 3; i++) {			//keep doubling ktau, then three extra iterations
+	if (ktausteps > 1) ktausteps1 = ktausteps + 3;
+	else ktausteps1 = 1;		//for quick tests, don't do extra iterations
+
+	for (i = 1; i <= ktausteps1; i++) {			//keep doubling ktau, then three extra iterations
 		if (i == 1) ktau = ktaustart;
 		else if (i <= ktausteps) ktau = ktau * 2;
 
@@ -122,8 +131,6 @@ int main(int argc, char *argv[])
 		insideit = 1;
 		do {
 			if (i == 1 && insideit == 1) {		// randomize initial flow directions
-				if(seed == 0) srand(clock());		// generate a random seed
-				else srand(seed);	//use a fixed seed
 				for (iseg = 1; iseg <= nseg; iseg++) {
 					if (known_flow_direction[iseg] == 0) {				//not a known flow direction
 						if (rand() % 2 == 1) flow_direction[iseg] = 1;	//target flow direction
@@ -158,6 +165,8 @@ int main(int argc, char *argv[])
 	analyzeresults();	//statistics and histograms of resulting flows
 
 	//Classification of boundary segments
+
+    int classdata = 1; //switch for known segment classification data
 	pcaps = 0.;	//calculate length-weighted mean pressure of flowing capillaries
 	totallength1 = 0.;
 	for (iseg = 1; iseg <= nseg; iseg++) if (qq[iseg] > 0.) {
@@ -167,10 +176,24 @@ int main(int argc, char *argv[])
 		}
 	}
 	pcaps = pcaps / totallength1;
-	for (iseg = 1; iseg <= nseg; iseg++) segvar[iseg] = 0.;	//initialize interior segments
+
+    for (iseg = 1; iseg <= nseg; iseg++) segvar[iseg] = 0.;
+
+	for (i = 1; i <= nnodbck; i++) {
+        for (inodbc=1; inodbc<=nnodbc; inodbc++) {
+            if (bcnodname[i] == nodname[bcnod[inodbc]]) {
+                inod = bcnod[inodbc];
+                iseg = nodseg[1][inod];
+                printf("%i %i %f\n", inod, iseg, bcprfl[i]);
+                segvar[iseg] = bcprfl[i];
+            }
+        }
+    }
+    
 	for (inodbc = 1; inodbc <= nnodbc; inodbc++) {
 		inod = bcnod[inodbc];
 		iseg = nodseg[1][inod];
+
 		if (ista[iseg] == inod && q[iseg] > 0) outflow = 0;
 		else if (iend[iseg] == inod && q[iseg] < 0) outflow = 0;
 		else outflow = 1;
@@ -178,31 +201,55 @@ int main(int argc, char *argv[])
 			if (outflow) pressclass = 6;		//outflow capillary
 			else pressclass = 7;				//inflow capillary
 		}
-		else {
-			if (segpress[iseg] > pcaps) {	
-				if (outflow) pressclass = 8;	//outflow arteriole
-				else pressclass = 9;			//inflow arteriole
+        else if (classdata == 1) {
+            if (tmpordart[iseg] == 0) {	
+		    	if (outflow) pressclass = 8;	//outflow arteriole
+		    	else pressclass = 9;			//inflow arteriole
+		    }
+		    else if (tmpordvein[iseg] == 0) {
+		    	if (outflow) pressclass = 4;	//outflow venule
+		    	else pressclass = 5;			//inflow venule
 			}
-			else {
-				if (outflow) pressclass = 4;	//outflow venule
-				else pressclass = 5;			//inflow venule
-			}
-		}		
-		segvar[iseg] = (float)(pressclass - 3);		// Color code boundary segments by classification
+        }
+        else {
+            if (segpress[iseg] > pcaps) {	
+		     	if (outflow) pressclass = 8;	//outflow arteriole
+		     	else pressclass = 9;			//inflow arteriole
+	        }
+            else {
+			    if (outflow) pressclass = 4;	//outflow venule
+	    	    else pressclass = 5;			//inflow venule
+            }
+        }
+		
+        segvar[iseg] = (float)(pressclass - 3);		// Color code boundary segments by classification
 		knowntyp[inod] = pressclass;			// Assign boundary node type by classification
-	}
+    }
 
 	writeflow();		//write new network.dat file
 
 #if defined(__unix__)			//Apple, linux
 	fs::copy_file("NetworkNew.dat", fs::path("Current/NetworkNew.dat"), fs::copy_options::overwrite_existing);
 #elif defined(_WIN32)			//Windows version
-	CopyFile("NetworkNew.dat", "Current\\NetworkNew.dat", NoOverwrite);
+	CopyFile("NetworkNew.dat", "Current/NetworkNew.dat", NoOverwrite);
 #endif
 	
 	cmgui(segvar);		//write input files for cmgui visualization
 	
 	picturenetwork(nodvar, segvar, "Current/BoundaryNodeTypes.ps");	//2D projection of network
+    
+    float flow_direction_temp=1., velocity_temp;
+
+    ofp1 = fopen("Current/data.out", "w");
+    fprintf(ofp1, "segName diam flow press shearstress velocity\n");
+    for (iseg = 1; iseg <= nseg; iseg++){
+        if (cnode[3][ista[iseg]] < cnode[3][iend[iseg]]) flow_direction_temp = -1.;
+        else flow_direction_temp = 1.;
+    
+        velocity_temp = 4000. / 60. * q[iseg] / pi1 / SQR(diam[iseg]);
+        fprintf(ofp1, "%i %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n", segname[iseg], diam[iseg], q[iseg], segpress[iseg], tau[iseg], flow_direction_temp * velocity_temp, velocity_temp);
+    }
+    fclose(ofp1); 
 
 	return 0;
 }

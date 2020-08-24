@@ -15,7 +15,7 @@ void setuparrays1(int nseg, int nnod)
 	extern int *nodout, *nodtyp, *ista, *iend;
 	extern int *flow_direction, *known_flow_direction;
 	extern int *knowntyp, *nodelambda, *bcnod;
-	extern int *nk, *nodrank;
+	extern int *nk, *nodrank, *segclasstyp, *nodclasstyp;
 	extern int **nodnod, **nodseg;
 	extern float *tau, *segpress, *qq, *nodvar, *segvar, *bchd;
 	extern float *histogramdisplay, *histogramweight;
@@ -26,6 +26,8 @@ void setuparrays1(int nseg, int nnod)
 
 	ista = ivector(1, nseg);
 	iend = ivector(1, nseg);
+	segclasstyp = ivector(1, nseg);
+	nodclasstyp = ivector(1, nnod);
 	nodout = ivector(1, nnod);
 	nodtyp = ivector(1, nnod);
 	nodnod = imatrix(1, nodsegm, 1, nnod);

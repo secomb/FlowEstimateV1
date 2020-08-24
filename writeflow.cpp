@@ -21,8 +21,7 @@ void writeflow()
 	extern float **cnode;
 	extern double *nodpress;
 
-	int i, iseg, inod, inodbc, max = 200, type;
-	float qinput, hdinput;
+	int i, iseg, inod, inodbc, max = 200;
 	FILE *ifp, *ofp;
 	char bb[200];
 

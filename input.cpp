@@ -33,10 +33,12 @@ void input(void)
 	extern int **segnodname, **nodseg;
 
 	extern float lb, maxl, pi1, alx, aly, alz, known_flow_weight;
-	extern float tol, omega, qtol, hdtol, optw, optlam, constvisc, vplas, mcvcorr, mcv, consthd, diamcrit;
+	extern float tol, omega, qtol, hdtol, optw, optlam, constvisc, vplas, mcvcorr, mcv, consthd, diamcrit, diamcorr;
 	extern float *bifpar, *cpar, *viscpar, *fahrpr;
 	extern float *diam, *q, *hd, *bcprfl, *bchd, *xsl0, *xsl1, *xsl2;
 	extern float **cnode;
+    
+    extern float *tmpordart, *tmpordvein;
 
 	extern double *lseg, presstarget1, sheartarget1, ktaustart, eps, omega1, omega2;
 
@@ -65,9 +67,12 @@ void input(void)
 		hd = vector(1, nseg);
 		lseg = dvector(1, nseg);
 		actual_direction = ivector(1, nseg);		// gives actual flow directions (for comparison with flow_direction array)
+
+        tmpordart = vector(1, nseg);
+        tmpordvein = vector(1, nseg);
 		for (iseg = 1; iseg <= nseg; iseg++) {		//segment properties: name type nodefrom nodeto diameter flow hematocrit
-			fscanf(ifp, "%i %i %i %i %f %f %f%*[^\n]", &segname[iseg], &segtyp[iseg], &segnodname[1][iseg],
-				&segnodname[2][iseg], &diam[iseg], &q[iseg], &hd[iseg]);
+			fscanf(ifp, "%i %i %i %i %f %f %f %f %f%*[^\n]", &segname[iseg], &segtyp[iseg], &segnodname[1][iseg],
+				&segnodname[2][iseg], &diam[iseg], &q[iseg], &hd[iseg], &tmpordart[iseg], &tmpordvein[iseg]);
 			if (q[iseg] >= 0.) actual_direction[iseg] = 1;
 			else actual_direction[iseg] = -1;
 		}
@@ -135,6 +140,7 @@ void input(void)
 		fscanf(ifp, "%f %*[^\n]", &diamcrit);
 		fscanf(ifp, "%f %*[^\n]", &known_flow_weight);
 		fscanf(ifp, "%i %*[^\n]", &seed);
+        fscanf(ifp, "%f %*[^\n]", &diamcorr);
 		fclose(ifp);
 	}
 }

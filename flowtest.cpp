@@ -24,7 +24,6 @@ void flowtest()
 	int iseg, iseg1, inod, inod1, inod2, i, errnode, niter, nnflow, nitmax = 10000, nnod0;
 	float maxerr, tol = 1.e-12, omega = 1.95;
 	double press1, pcondsum;
-	srand(123456);
 
 	//basic version of analyzenet
 	for (iseg = 1; iseg <= nseg; iseg++) {		//Search for nodes corresponding to this segment
@@ -52,8 +51,7 @@ void flowtest()
 	}
 	//basic version of solve
 	for (inod = 1; inod <= nnod; inod++) {
-		if (nodtyp[inod] == 1)
-			nodpress[inod] = rand()*100. / RAND_MAX;	//put random pressures on all type 1 nodes
+		if (nodtyp[inod] == 1) nodpress[inod] = rand()*100. / RAND_MAX;	//put random pressures on all type 1 nodes
 		else nodpress[inod] = 50.;
 	}
 	for (niter = 1; niter <= nitmax; niter++) {					//iterative solution for pressures

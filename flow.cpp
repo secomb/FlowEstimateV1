@@ -84,7 +84,7 @@ void flow()
 
 	int notconservedcount = 0, minpressnod = 0, maxpressnod = 0;
 	int iseg, inod, i;
-	float total_dev, shear_rms, press_rms, currentflow = 0.;
+	float total_dev, shear_rms, press_rms, currentflow, sumflow;
 	float viscosity, facfp = pi1 * 1333. / 128. / 0.01*60. / 1.e6;
 	float shearconstant = 32. / pi1 * 1.e4 / 60.; //converts shearfac (c_j) from cP/micron^3 to (dyn/cm^2)/(nL/min)
 	float kappasum1, kappasum2;
@@ -185,12 +185,14 @@ void flow()
 	notconservedcount = 0;		// check whether flow is conserved
 	for (inod = 1; inod <= nnod; inod++) if (knowntyp[inod] == 1) {
 		currentflow = 0.;
+		sumflow = 0.;
 		for (i = 1; i <= nodtyp[inod]; i++) {
 			iseg = nodseg[i][inod];
 			if (ista[iseg] == inod) currentflow += q[iseg];
 			else currentflow -= q[iseg];
+			sumflow += fabs(q[iseg]);
 		}
-		if (fabs(currentflow) > 0.001) { 		//flow is not conserved
+		if (fabs(currentflow)/(1. + sumflow) > 10.*eps) { 		//flow is not conserved
 			notconservedcount++;
 			if (notconservedcount == 1) printf("*** Warning: Flow conservation error node: net flow");
 			if (notconservedcount % 8 == 1) printf("\n");
