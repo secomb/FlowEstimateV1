@@ -72,10 +72,11 @@ void flow()
 {
 	extern int numberknownpress, numberunknown, matrixdim, solvetyp, varytargetshear, nitmax2;
 	extern int insideit, nnodbc, nseg, nnod, nodsegm, phaseseparation, varyviscosity;
-	extern int *bcnodname, *nodname, *flow_direction, *knowntyp, *bcnod, *bctyp, *nodtyp, *ista, *iend, *segname, *idx;
+	extern int *bcnodname, *nodname, *flow_direction, *segtyp, *knowntyp, *bcnod, *bctyp, *nodtyp, *ista, *iend, *segname, *idx;
 	extern int **nodseg, **nodnod, *known_flow_direction;
 	extern float pi1, consthd, constvisc, totallength, known_flow_weight, kappa;
 	extern float *diam, *q, *diam, *tau, *bchd, *hd, *bcprfl;
+    extern float *tmpq0;
 	extern double ktau, kpress, sheartarget1, presstarget1, eps, omega1;
 	extern double *length_weight, *lseg, *nodpress, *cond, *lambda, *sheartarget, *shearfac, *nodeinflow, *precond;
 	extern double *hfactor1, *hfactor2, *condsum, *hfactor2sum;
@@ -103,11 +104,22 @@ void flow()
 		if (varytargetshear) {
 			vesspress = (nodpress[ista[iseg]] + nodpress[iend[iseg]]) / 2;		// compute vessel pressure as average of nodes
 			vesspress = FMAX(vesspress, 10.);									// set minimum pressure to 10 for shear target estimation
-			vess_shear_target = 100 - 86 * exp(-5000 * pow(log10(log10(vesspress)), 5.4));	//pressure-shear relationship
-			sheartarget[iseg] = flow_direction[iseg] * vess_shear_target;
+            if (segtyp[iseg] == 6) sheartarget[iseg] = 8000 * viscosity * tmpq0[iseg] / diam[iseg];
+            else {
+                vess_shear_target = 100 - 86 * exp(-5000 * pow(log10(log10(vesspress)), 5.4));	//pressure-shear relationship
+                sheartarget[iseg] = flow_direction[iseg] * vess_shear_target;
+            }
+
 		}
 		else sheartarget[iseg] = flow_direction[iseg] * sheartarget1;  // constant tau0j
-		if (known_flow_direction[iseg] == 0) {
+
+        /*if (segtyp[iseg] == 6) {
+            //treat these the same as known flow directions???  I don't know but we'll certainly try
+			hfactor1[iseg] = known_flow_weight * shearfac[iseg] * kappa * cond[iseg] * sheartarget[iseg];	//extra weight for known flow direction segments
+			hfactor2[iseg] = known_flow_weight * SQR(shearfac[iseg] * cond[iseg]);
+
+        }
+        else*/ if (known_flow_direction[iseg] == 0) {
 			hfactor1[iseg] = ktau * lseg[iseg] * shearfac[iseg] * kappa * cond[iseg] * sheartarget[iseg];	//needed for hmatrix terms
 			hfactor2[iseg] = ktau * lseg[iseg] * SQR(shearfac[iseg] * cond[iseg]);
 		}
@@ -173,10 +185,10 @@ void flow()
 	kappasum1 = 0.;	//update kappa factor according to results from previous iteration
 	kappasum2 = 0.;
 	for (iseg = 1; iseg <= nseg; iseg++) {
-		q[iseg] = (nodpress[ista[iseg]] - nodpress[iend[iseg]])*cond[iseg];			// qj = (p1-p2)*gj
-		tau[iseg] = (nodpress[ista[iseg]] - nodpress[iend[iseg]])*1333.*diam[iseg] / lseg[iseg] / 4.; // tau = r*|p1-p2|/(2L)
-		kappasum2 += lseg[iseg] * SQR(tau[iseg]);
-		kappasum1 += lseg[iseg] * fabs(tau[iseg]);
+            q[iseg] = (nodpress[ista[iseg]] - nodpress[iend[iseg]])*cond[iseg];			// qj = (p1-p2)*gj
+            tau[iseg] = (nodpress[ista[iseg]] - nodpress[iend[iseg]])*1333.*diam[iseg] / lseg[iseg] / 4.; // tau = r*|p1-p2|/(2L)
+            kappasum2 += lseg[iseg] * SQR(tau[iseg]);
+            kappasum1 += lseg[iseg] * fabs(tau[iseg]);
 	}
 	kappasum1 = kappasum1 / totallength;
 	kappasum2 = kappasum2 / totallength;

@@ -28,8 +28,8 @@ Classification codes (revised May 2019 to give better color codes in cmgui):
 
 #if defined(__linux__)
 	// Requires c++17 support, should be included in all current linux releases
-	#include <experimental/filesystem> 
-	namespace fs = std::experimental::filesystem::v1;
+	#include <filesystem> 
+	namespace fs = std::filesystem;
 #elif defined(__APPLE__)
 	// Requires removal of the -lstdc++fs flag from makefile
 	#include <filesystem>
@@ -70,7 +70,7 @@ double *precond, *bvector, *xvector,  *condsum;
 double *hfactor1, *hfactor2, *hfactor2sum;
 double **hmat, **kmat, **fullmatrix;
 
-float *tmpordart, *tmpordvein;
+float *tmpordart, *tmpordvein, *tmpq0;
 FILE *ofp1;
 
 int main(int argc, char *argv[])
@@ -197,11 +197,8 @@ int main(int argc, char *argv[])
 		if (ista[iseg] == inod && q[iseg] > 0) outflow = 0;
 		else if (iend[iseg] == inod && q[iseg] < 0) outflow = 0;
 		else outflow = 1;
-		if (diam[iseg] < diamcrit) {
-			if (outflow) pressclass = 6;		//outflow capillary
-			else pressclass = 7;				//inflow capillary
-		}
-        else if (classdata == 1) {
+
+        if (classdata == 1) {
             if (tmpordart[iseg] == 0) {	
 		    	if (outflow) pressclass = 8;	//outflow arteriole
 		    	else pressclass = 9;			//inflow arteriole
@@ -211,6 +208,10 @@ int main(int argc, char *argv[])
 		    	else pressclass = 5;			//inflow venule
 			}
         }
+		else if (diam[iseg] < diamcrit) {
+			if (outflow) pressclass = 6;		//outflow capillary
+			else pressclass = 7;				//inflow capillary
+		}
         else {
             if (segpress[iseg] > pcaps) {	
 		     	if (outflow) pressclass = 8;	//outflow arteriole
