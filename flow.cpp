@@ -104,7 +104,7 @@ void flow()
 		if (varytargetshear) {
 			vesspress = (nodpress[ista[iseg]] + nodpress[iend[iseg]]) / 2;		// compute vessel pressure as average of nodes
 			vesspress = FMAX(vesspress, 10.);									// set minimum pressure to 10 for shear target estimation
-            if (segtyp[iseg] == 6) sheartarget[iseg] = 8000 * viscosity * tmpq0[iseg] / diam[iseg];
+            if (segtyp[iseg] == 6) sheartarget[iseg] = 80 * viscosity * tmpq0[iseg] / diam[iseg];
             else {
                 vess_shear_target = 100 - 86 * exp(-5000 * pow(log10(log10(vesspress)), 5.4));	//pressure-shear relationship
                 sheartarget[iseg] = flow_direction[iseg] * vess_shear_target;
@@ -119,7 +119,7 @@ void flow()
 			hfactor2[iseg] = known_flow_weight * SQR(shearfac[iseg] * cond[iseg]);
 
         }
-        else*/ if (known_flow_direction[iseg] == 0) {
+        else */ if (known_flow_direction[iseg] == 0) {
 			hfactor1[iseg] = ktau * lseg[iseg] * shearfac[iseg] * kappa * cond[iseg] * sheartarget[iseg];	//needed for hmatrix terms
 			hfactor2[iseg] = ktau * lseg[iseg] * SQR(shearfac[iseg] * cond[iseg]);
 		}
