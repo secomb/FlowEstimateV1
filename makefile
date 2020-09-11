@@ -1,29 +1,43 @@
-# Place this make file in the same directory as the source files.
-# Type " make clean " to remove previous build files. 
-# Compile in the command line by typing:
-# make
-# This creates an executable "flowEstimate", which can be run by typing:
-# ./flowEstimate
+# Updated makefile for flow estimation algorithm by Fryet al.
+# Compile in command line by executing 'make', which creates executable "flowEstimate".
+# Last updated by Grace Lee, September 2020
 
-CC=g++ # define the compiler to use
-TARGET=flowEstimate # define the name of the executable
-SOURCES=Amatrix.cpp Amultiply.cpp analyzenet.cpp analyzeresults.cpp bvector.cpp cmgui.cpp dishem.cpp flow.cpp flowtest.cpp histogram.cpp input.cpp ludcmp.cpp main.cpp nrutil.cpp picturenetwork.cpp putrank.cpp relax_method.cpp setuparrays1.cpp sparse_cgsymm.cpp viscor.cpp writeflow.cpp # list source files
-CFLAGS=-O3 
-CXXFLAGS=-std=c++17 -g
-LFLAGS=-Wall -lm 
+# Compiler options
+CXX = g++
+TARGET = flowEstimate
 
-# define list of objects
-OBJSC=$(SOURCES:.c=.o)
-OBJS=$(OBJSC:.cpp=.o)
+# Specify object build directory and sources
+OBJ_DIR = ./obj
+SRC = $(wildcard *.cpp)
+OBJS = $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
-# the target is obtained linking all .o files
-all: $(SOURCES) $(TARGET)
+# Compiler flags
+CXXFLAGS = -std=c++17
+LDFLAGS =
 
+all: build $(TARGET)
+
+# Compile cpp files to objects in ./obj
+$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -c $< -o $@ $(LDFLAGS)
+
+# Build target by compiling .o files
 $(TARGET): $(OBJS)
-	$(CC) $(LFLAGS) $(OBJS) -o $(TARGET)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $^ $(LDFLAGS)
 
-purge: clean
-	rm -f $(TARGET)
+.PHONY: all build clean debug release
+
+build:
+	@mkdir -p $(OBJ_DIR)
+
+debug: CXXFLAGS += -g
+debug: all
+
+release: CXXFLAGS += -O3
+release: all
 
 clean:
-	rm -f *.o
+	-@rm -rvf $(OBJ_DIR)/*
+	-@rm -vf $(TARGET)
