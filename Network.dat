@@ -9563,14 +9563,14 @@ name  x     y     z
 12 total number of known boundary nodes
 node bctyp press/flow   HD    PO2
 113     -2      -1  0.0
-118     -2      -1  0.0
+118     -2      -1  0.0 *** Not in spec. dir. (wants 1)
 339     -2      -1  0.0
 11925   -2      -1  0.0
 1241    -2      -1  0.0
 800     -2      -1  0.0
 1927    -2      -1  0.0
-11930   -2      1   0.0
+11930   -2      1  0.0 *** Not in spec. dir. (wants -1)
 86      -2      -1  0.0
 175     -2      -1  0.0
 285     -2      1   0.0
-43      -2      -1  0.0
+43      -2      -1   0.0 *** Not in spec. dir. (wants 1)

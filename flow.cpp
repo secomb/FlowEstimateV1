@@ -71,13 +71,13 @@ void Amultiply(double *input, double *output);
 void flow()
 {
 	extern int numberknownpress, numberunknown, matrixdim, solvetyp, varytargetshear, nitmax2;
-	extern int insideit, nnodbc, nseg, nnod, nodsegm, phaseseparation, varyviscosity;
+	extern int insideit, nnodbc, nseg, nnod, nodsegm, phaseseparation, varyviscosity, ktausteps;
 	extern int *bcnodname, *nodname, *flow_direction, *segtyp, *knowntyp, *bcnod, *bctyp, *nodtyp, *ista, *iend, *segname, *idx;
 	extern int **nodseg, **nodnod, *known_flow_direction;
 	extern float pi1, consthd, constvisc, totallength, known_flow_weight, kappa;
 	extern float *diam, *q, *diam, *tau, *bchd, *hd, *bcprfl;
     extern float *tmpq0;
-	extern double ktau, kpress, sheartarget1, presstarget1, eps, omega1;
+	extern double ktau, kpress, sheartarget1, presstarget1, eps, omega1, ktaustart;
 	extern double *length_weight, *lseg, *nodpress, *cond, *lambda, *sheartarget, *shearfac, *nodeinflow, *precond;
 	extern double *hfactor1, *hfactor2, *condsum, *hfactor2sum;
 	extern double **hmat, **kmat, **fullmatrix, *bvector, *xvector, *dd;
@@ -93,6 +93,13 @@ void flow()
 	double bcgerror = 0.;
 	float duration;
 	clock_t tstart, tfinish;
+
+    float known_scale_fac = 10.;
+    float known_velocity_weight = FMIN(known_scale_fac * ktau, pow(2.,(float)ktausteps - 1.) * ktaustart);
+    
+    // Hardcoded solution for forcing higher scale fac at low ktau values
+    //if (ktau < 0.128) known_velocity_weight = known_scale_fac * ktau;
+    //else known_velocity_weight = ktau;
 
 	kpress = 1.;	//was 0.1 in previous versions
 
@@ -113,13 +120,15 @@ void flow()
 		}
 		else sheartarget[iseg] = flow_direction[iseg] * sheartarget1;  // constant tau0j
 
-        /*if (segtyp[iseg] == 6) {
+        if (segtyp[iseg] == 6) {
             //treat these the same as known flow directions???  I don't know but we'll certainly try
-			hfactor1[iseg] = known_flow_weight * shearfac[iseg] * kappa * cond[iseg] * sheartarget[iseg];	//extra weight for known flow direction segments
-			hfactor2[iseg] = known_flow_weight * SQR(shearfac[iseg] * cond[iseg]);
+            //apparently this doesn't work... but treating them as normal segments does.
+            //FMIN(pow(2.,ktausteps) * ktaustart, known_scale_fac * ktau) * 
+			hfactor1[iseg] = known_velocity_weight * lseg[iseg] * shearfac[iseg] * kappa * cond[iseg] * sheartarget[iseg];	//extra weight for known flow direction segments
+			hfactor2[iseg] = known_velocity_weight * lseg[iseg] * SQR(shearfac[iseg] * cond[iseg]);
 
         }
-        else */ if (known_flow_direction[iseg] == 0) {
+        else if (known_flow_direction[iseg] == 0) {
 			hfactor1[iseg] = ktau * lseg[iseg] * shearfac[iseg] * kappa * cond[iseg] * sheartarget[iseg];	//needed for hmatrix terms
 			hfactor2[iseg] = ktau * lseg[iseg] * SQR(shearfac[iseg] * cond[iseg]);
 		}

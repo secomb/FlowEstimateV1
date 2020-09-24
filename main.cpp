@@ -198,7 +198,12 @@ int main(int argc, char *argv[])
 		else if (iend[iseg] == inod && q[iseg] < 0) outflow = 0;
 		else outflow = 1;
 
-        if (classdata == 1) {
+
+		if (diam[iseg] < diamcrit) {
+			if (outflow) pressclass = 6;		//outflow capillary
+			else pressclass = 7;				//inflow capillary
+		}
+        else if (classdata == 1) {
             if (tmpordart[iseg] == 0) {	
 		    	if (outflow) pressclass = 8;	//outflow arteriole
 		    	else pressclass = 9;			//inflow arteriole
@@ -208,10 +213,6 @@ int main(int argc, char *argv[])
 		    	else pressclass = 5;			//inflow venule
 			}
         }
-		else if (diam[iseg] < diamcrit) {
-			if (outflow) pressclass = 6;		//outflow capillary
-			else pressclass = 7;				//inflow capillary
-		}
         else {
             if (segpress[iseg] > pcaps) {	
 		     	if (outflow) pressclass = 8;	//outflow arteriole
