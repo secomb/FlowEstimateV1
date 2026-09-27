@@ -1,8 +1,10 @@
 ﻿# FlowEstimateV1: Estimation of blood flows in a network with incomplete boundary conditions
 
-The purpose of this program is to estimate blood flows in a network of microvessels with known geometry, but with incomplete boundary conditions. If a complete set of boundary conditions is given, then NetFlowV1 can be used: see https://github.com/secomb/NetFlowV2.  
+The purpose of this program is to estimate blood flows in a network of microvessels with known geometry, but with incomplete boundary conditions. If a complete set of boundary conditions is given, then NetFlowV1 can be used: see https://github.com/secomb/NetFlowV2. 
+
 The essential idea of the method is to solve for a set of flows that satisfies conservation of flow at all internal nodes and also satisfies any known boundary conditions, while minimizing the sum of squared deviations of pressures and flows from target values based on typical hemodynamic properties of such networks. The method is described in:
 Fry BC, Lee J, Smith NP, Secomb TW. 2012 Estimation of blood flow rates in large microvascular networks. Microcirculation 19, 530-538. (doi:10.1111/j.1549-8719.2012.00184.x).  
+
 An objective function is set up in terms of the unknown nodal pressures. The constraints of flow conservation at internal and known boundary nodes are introduced using Lagrange multipliers. Differentiating with respect to the pressures and the Lagrange multipliers gives a system of linear equations:
 
                  N                 IUB'
